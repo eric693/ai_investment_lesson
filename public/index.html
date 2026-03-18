@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智投 AI｜全方位投資分析系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:        #07090d;
+  --surface:   #0c0f16;
+  --panel:     #10141e;
+  --lift:      #151b28;
+  --b0:        #1c2535;
+  --b1:        #253347;
+  --accent:    #3d82f6;
+  --a-dim:     #2563c4;
+  --a-glow:    rgba(61,130,246,0.12);
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --amber:     #f59e0b;
+  --purple:    #a78bfa;
+  --text:      #e8edf5;
+  --t2:        #8897ae;
+  --t3:        #3d4f67;
+  --mono:      'IBM Plex Mono', monospace;
+  --sans:      'DM Sans', 'Noto Sans TC', sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;}
+body{display:grid;grid-template-rows:48px 1fr;}
+
+/* ── HEADER ── */
+header{
+  background:var(--surface);border-bottom:1px solid var(--b0);
+  display:flex;align-items:center;padding:0 18px;gap:14px;z-index:200;
+}
+.logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.logo-mk{width:26px;height:26px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.logo-mk svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.logo-txt{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.04em;}
+.logo-txt span{color:var(--accent);}
+.vdiv{width:1px;height:22px;background:var(--b0);flex-shrink:0;}
+.ticker-bar{flex:1;overflow:hidden;mask-image:linear-gradient(to right,transparent 0%,#000 7%,#000 93%,transparent);}
+.ticker-track{display:flex;white-space:nowrap;animation:scrollT 40s linear infinite;}
+@keyframes scrollT{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.tick{display:inline-flex;align-items:center;gap:7px;padding:0 18px;border-right:1px solid var(--b0);font-family:var(--mono);font-size:10.5px;}
+.tick-sym{color:var(--t2);font-weight:500;}.tick-val{color:var(--text);}.tick-up{color:var(--green);}.tick-dn{color:var(--red);}
+.hdr-r{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.live-b{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.06em;}
+.live-d{width:6px;height:6px;border-radius:50%;background:var(--green);animation:lp 2s ease-in-out infinite;}
+@keyframes lp{0%,100%{opacity:1;}50%{opacity:.4;}}
+.hdr-t{font-family:var(--mono);font-size:11px;color:var(--t3);}
+
+/* ── APP BODY ── */
+.app-body{display:grid;grid-template-columns:58px 1fr;overflow:hidden;height:100%;}
+
+/* ── LEFT NAV ── */
+.app-nav{
+  background:var(--surface);border-right:1px solid var(--b0);
+  display:flex;flex-direction:column;align-items:center;
+  padding:10px 0;gap:4px;overflow-y:auto;scrollbar-width:none;z-index:100;
+}
+.app-nav::-webkit-scrollbar{display:none;}
+.nav-sep{width:32px;height:1px;background:var(--b0);margin:6px 0;flex-shrink:0;}
+
+.ni{
+  width:40px;height:40px;border-radius:10px;border:none;background:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--t3);transition:all .15s;position:relative;
+  flex-shrink:0;
+}
+.ni svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.ni:hover{background:var(--lift);color:var(--t2);}
+.ni.active{background:var(--a-glow);color:var(--accent);}
+.ni.active svg{stroke:var(--accent);}
+
+/* Tooltip */
+.ni::after{
+  content:attr(data-tip);
+  position:absolute;left:calc(100% + 12px);
+  background:var(--lift);border:1px solid var(--b1);
+  color:var(--text);font-family:var(--sans);font-size:11px;
+  padding:4px 9px;border-radius:6px;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .15s;z-index:300;
+}
+.ni:hover::after{opacity:1;}
+
+/* ── MAIN CONTENT ── */
+.app-main{overflow:hidden;display:grid;}
+
+/* All sections hidden by default */
+.sec{display:none;height:100%;overflow:hidden;}
+.sec.active{display:flex;flex-direction:column;}
+
+/* ═══════════════════════════════════════════
+   CHAT SECTION
+═══════════════════════════════════════════ */
+.chat-wrap{display:grid;grid-template-columns:210px 1fr 252px;height:100%;overflow:hidden;}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--b0);display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;}
+.sidebar::-webkit-scrollbar{display:none;}
+.sb-wrap{padding:16px 12px 8px;}
+.sb-lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--b0);}
+
+.qbtn{width:100%;background:transparent;border:none;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:7px;margin-bottom:2px;cursor:pointer;color:var(--t2);text-align:left;transition:background .12s,color .12s;}
+.qbtn:hover{background:var(--lift);color:var(--text);}
+.qbtn-ico{width:28px;height:28px;flex-shrink:0;border-radius:7px;background:var(--panel);border:1px solid var(--b0);display:flex;align-items:center;justify-content:center;transition:border-color .12s,background .12s;}
+.qbtn:hover .qbtn-ico{border-color:var(--a-dim);background:var(--a-glow);}
+.qbtn-ico svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.qbtn-txt{font-size:12px;line-height:1.3;}
+
+.watchlist{padding:0 12px 12px;}
+.watch-item{display:flex;align-items:center;justify-content:space-between;padding:9px 8px;border-radius:7px;cursor:pointer;transition:background .12s;margin-bottom:2px;}
+.watch-item:hover{background:var(--lift);}
+.w-left{display:flex;align-items:center;gap:9px;}
+.w-bar{width:3px;height:26px;border-radius:2px;background:var(--b1);flex-shrink:0;transition:background .12s;}
+.watch-item:hover .w-bar{background:var(--accent);}
+.w-sym{font-family:var(--mono);font-size:12px;font-weight:600;line-height:1;margin-bottom:3px;}
+.w-name{font-size:10px;color:var(--t3);}
+.w-right{text-align:right;}
+.w-price{font-family:var(--mono);font-size:12px;line-height:1;margin-bottom:3px;}
+.w-chg{font-family:var(--mono);font-size:10px;}
+.up{color:var(--green);}.dn{color:var(--red);}
+
+.chat-area{display:flex;flex-direction:column;background:var(--bg);overflow:hidden;position:relative;}
+.chat-area::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);background-size:44px 44px;}
+
+.topbar{position:relative;z-index:2;height:46px;padding:0 20px;border-bottom:1px solid var(--b0);display:flex;align-items:center;gap:10px;background:rgba(12,15,22,.85);backdrop-filter:blur(10px);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(34,197,94,.18);}
+.topbar-title{font-size:13px;font-weight:500;}
+.topbar-tag{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3);background:var(--panel);border:1px solid var(--b0);border-radius:4px;padding:2px 8px;}
+
+.messages{position:relative;z-index:1;flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px;scrollbar-width:thin;scrollbar-color:var(--b0) transparent;}
+.messages::-webkit-scrollbar{width:3px;}
+.messages::-webkit-scrollbar-thumb{background:var(--b0);border-radius:2px;}
+
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:20px;}
+.wlc-icon{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#1a2e5c,#141f3a);border:1px solid var(--b1);display:flex;align-items:center;justify-content:center;box-shadow:0 0 32px rgba(61,130,246,.2);}
+.wlc-icon svg{width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;}
+.wlc-title{font-size:20px;font-weight:600;letter-spacing:-.025em;}
+.wlc-sub{font-size:13px;color:var(--t2);max-width:380px;line-height:1.75;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:4px;}
+.chip{background:var(--panel);border:1px solid var(--b0);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--t2);cursor:pointer;user-select:none;transition:all .12s;}
+.chip:hover{border-color:var(--a-dim);color:var(--accent);background:var(--a-glow);}
+
+.msg{display:flex;gap:11px;animation:msgIn .22s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.msg.user{flex-direction:row-reverse;}
+.msg-av{width:32px;height:32px;border-radius:9px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;}
+.msg.ai .msg-av{background:linear-gradient(135deg,#1a2e5c,#141f3a);border:1px solid var(--b1);}
+.msg.ai .msg-av svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.msg.user .msg-av{background:var(--lift);border:1px solid var(--b0);}
+.msg.user .msg-av svg{width:14px;height:14px;stroke:var(--t2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.msg-bbl{max-width:76%;padding:12px 15px;border-radius:12px;font-size:13.5px;line-height:1.78;}
+.msg.ai .msg-bbl{background:var(--surface);border:1px solid var(--b0);border-top-left-radius:3px;}
+.msg.user .msg-bbl{background:var(--lift);border:1px solid var(--b1);border-top-right-radius:3px;}
+.msg-bbl strong{color:var(--accent);font-weight:600;}
+.msg-bbl em{color:var(--amber);font-style:normal;}
+.msg-bbl code{font-family:var(--mono);font-size:11.5px;background:var(--panel);border:1px solid var(--b0);border-radius:4px;padding:1px 5px;color:var(--t2);}
+.typing{display:flex;gap:5px;align-items:center;padding:3px 0;}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--t3);animation:tdot 1.1s ease-in-out infinite;}
+.typing span:nth-child(2){animation-delay:.18s;}.typing span:nth-child(3){animation-delay:.36s;}
+@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.3;}30%{transform:translateY(-5px);opacity:1;}}
+
+.input-zone{position:relative;z-index:2;padding:14px 18px;border-top:1px solid var(--b0);background:rgba(12,15,22,.9);backdrop-filter:blur(10px);}
+.input-shell{display:flex;align-items:flex-end;gap:10px;background:var(--panel);border:1px solid var(--b0);border-radius:12px;padding:10px 14px;transition:border-color .15s,box-shadow .15s;}
+.input-shell:focus-within{border-color:var(--a-dim);box-shadow:0 0 0 3px var(--a-glow);}
+#userInput{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:13.5px;resize:none;line-height:1.55;max-height:130px;}
+#userInput::placeholder{color:var(--t3);}
+.send-btn{width:34px;height:34px;background:var(--accent);border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s,transform .1s;}
+.send-btn svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.send-btn:hover:not(:disabled){background:#5a9af8;transform:scale(1.06);}
+.send-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.input-hint{margin-top:7px;font-size:10.5px;color:var(--t3);text-align:center;font-family:var(--mono);}
+
+.right-panel{background:var(--surface);border-left:1px solid var(--b0);display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;}
+.right-panel::-webkit-scrollbar{display:none;}
+.rp-sec{padding:16px 14px;border-bottom:1px solid var(--b0);}
+.rp-lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:11px;}
+.a-select{width:100%;background:var(--panel);border:1px solid var(--b0);border-radius:8px;padding:8px 28px 8px 10px;color:var(--t2);font-family:var(--sans);font-size:12px;cursor:pointer;outline:none;margin-bottom:7px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%233d4f67' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.a-select:focus{border-color:var(--a-dim);}
+.a-textarea{width:100%;background:var(--panel);border:1px solid var(--b0);border-radius:8px;padding:9px 10px;color:var(--t2);font-family:var(--sans);font-size:12px;resize:none;outline:none;height:72px;margin-bottom:7px;line-height:1.6;}
+.a-textarea::placeholder{color:var(--t3);}
+.a-textarea:focus{border-color:var(--a-dim);}
+.a-btn{width:100%;background:var(--accent);border:none;border-radius:8px;padding:9px 12px;color:#fff;font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;transition:background .12s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.a-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.a-btn:hover:not(:disabled){background:#5a9af8;}
+.a-btn:disabled{opacity:.4;cursor:not-allowed;}
+.a-result{display:none;margin-top:9px;background:var(--panel);border:1px solid var(--b0);border-radius:8px;padding:10px;font-size:11.5px;line-height:1.75;color:var(--t2);max-height:280px;overflow-y:auto;white-space:pre-wrap;scrollbar-width:thin;}
+.a-result.show{display:block;}
+.ind-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--b0);}
+.ind-row:last-child{border:none;padding-bottom:0;}
+.ind-left{flex:1;}
+.ind-name{font-size:11px;color:var(--t2);margin-bottom:5px;}
+.ind-track{height:2px;background:var(--panel);border-radius:2px;overflow:hidden;}
+.ind-fill{height:100%;border-radius:2px;}
+.ind-val{font-family:var(--mono);font-size:11px;font-weight:500;margin-left:14px;width:36px;text-align:right;flex-shrink:0;}
+.note{display:flex;gap:10px;margin-bottom:11px;}
+.note:last-child{margin-bottom:0;}
+.note-line{width:2px;border-radius:2px;flex-shrink:0;}
+.note-body{font-size:11.5px;color:var(--t2);line-height:1.7;}
+.note-ttl{font-size:10.5px;font-weight:600;margin-bottom:3px;}
+
+/* ═══════════════════════════════════════════
+   SHARED SECTION STYLES
+═══════════════════════════════════════════ */
+.sec-header{padding:20px 28px 0;flex-shrink:0;}
+.sec-title{font-size:18px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px;}
+.sec-sub{font-size:12.5px;color:var(--t2);}
+.sec-body{flex:1;overflow-y:auto;padding:20px 28px;scrollbar-width:thin;scrollbar-color:var(--b0) transparent;}
+.sec-body::-webkit-scrollbar{width:4px;}
+.sec-body::-webkit-scrollbar-thumb{background:var(--b0);border-radius:2px;}
+
+/* Form card */
+.form-card{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:20px;margin-bottom:16px;}
+.form-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.form-card-title svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.form-grid.cols-1{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-size:11px;color:var(--t2);font-family:var(--mono);letter-spacing:.04em;}
+.form-input,.form-select,.form-ta{
+  background:var(--panel);border:1px solid var(--b0);border-radius:8px;
+  padding:8px 11px;color:var(--text);font-family:var(--sans);font-size:12.5px;outline:none;
+  transition:border-color .12s;
+}
+.form-input:focus,.form-select:focus,.form-ta:focus{border-color:var(--a-dim);box-shadow:0 0 0 2px var(--a-glow);}
+.form-select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%233d4f67' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.form-ta{resize:vertical;min-height:80px;line-height:1.6;}
+.form-input::placeholder,.form-ta::placeholder{color:var(--t3);}
+
+.submit-btn{
+  background:var(--accent);border:none;border-radius:9px;
+  padding:11px 22px;color:#fff;font-family:var(--sans);font-size:13px;font-weight:600;
+  cursor:pointer;transition:background .12s,transform .1s;
+  display:flex;align-items:center;gap:8px;
+}
+.submit-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.submit-btn:hover:not(:disabled){background:#5a9af8;}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Result box */
+.result-box{
+  background:var(--surface);border:1px solid var(--b0);border-radius:12px;
+  padding:20px;margin-top:16px;display:none;
+}
+.result-box.show{display:block;}
+.result-box-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.result-box-title{font-size:12px;font-weight:600;color:var(--t2);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;}
+.copy-btn{background:var(--panel);border:1px solid var(--b0);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--t2);cursor:pointer;transition:all .12s;}
+.copy-btn:hover{border-color:var(--a-dim);color:var(--accent);}
+.result-content{font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;}
+.result-content strong{color:var(--accent);}
+
+/* Spinner */
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spinR .5s linear infinite;flex-shrink:0;}
+@keyframes spinR{to{transform:rotate(360deg);}}
+.err{color:var(--red);font-size:13px;}
+
+/* ═══════════════════════════════════════════
+   TEMPLATES SECTION
+═══════════════════════════════════════════ */
+.tmpl-cats{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.tmpl-cat-btn{background:var(--panel);border:1px solid var(--b0);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--t2);cursor:pointer;transition:all .12s;}
+.tmpl-cat-btn:hover,.tmpl-cat-btn.active{border-color:var(--a-dim);color:var(--accent);background:var(--a-glow);}
+.tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.tmpl-card{
+  background:var(--surface);border:1px solid var(--b0);border-radius:12px;
+  padding:18px;cursor:pointer;transition:border-color .15s,transform .15s;
+  display:flex;flex-direction:column;gap:10px;
+}
+.tmpl-card:hover{border-color:var(--b1);transform:translateY(-2px);}
+.tmpl-card-header{display:flex;align-items:center;gap:10px;}
+.tmpl-cat-tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:4px;font-weight:500;}
+.tmpl-card-title{font-size:13.5px;font-weight:600;color:var(--text);}
+.tmpl-card-desc{font-size:12px;color:var(--t2);line-height:1.65;}
+.tmpl-preview{background:var(--panel);border-radius:7px;padding:10px;font-size:11px;color:var(--t3);line-height:1.6;font-family:var(--mono);border-left:2px solid var(--b1);}
+.tmpl-actions{display:flex;gap:8px;margin-top:4px;}
+.tmpl-use-btn{flex:1;background:var(--a-glow);border:1px solid var(--a-dim);border-radius:7px;padding:7px 12px;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;transition:background .12s;}
+.tmpl-use-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tmpl-copy-btn{background:var(--panel);border:1px solid var(--b0);border-radius:7px;padding:7px 10px;color:var(--t2);font-size:12px;cursor:pointer;transition:all .12s;}
+.tmpl-copy-btn:hover{color:var(--text);border-color:var(--b1);}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD SECTION
+═══════════════════════════════════════════ */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.kpi-card{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:16px;}
+.kpi-label{font-size:10.5px;color:var(--t2);margin-bottom:6px;font-family:var(--mono);letter-spacing:.04em;}
+.kpi-val{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1;}
+.kpi-chg{font-family:var(--mono);font-size:11px;margin-top:4px;}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px;}
+.chart-card{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:18px;}
+.chart-card-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;}
+.chart-wrap{position:relative;height:200px;}
+.holdings-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.holdings-card{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:18px;}
+.holding-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b0);}
+.holding-item:last-child{border:none;}
+.holding-sym{font-family:var(--mono);font-size:12px;font-weight:600;}
+.holding-name{font-size:10px;color:var(--t3);}
+.holding-val{text-align:right;}
+.holding-price{font-family:var(--mono);font-size:12px;}
+.holding-pnl{font-family:var(--mono);font-size:10px;}
+
+/* ═══════════════════════════════════════════
+   GUIDE / CODE SECTION
+═══════════════════════════════════════════ */
+.guide-tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--panel);padding:4px;border-radius:10px;width:fit-content;}
+.guide-tab{padding:7px 16px;border-radius:7px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--t2);transition:all .12s;border:none;background:transparent;}
+.guide-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.guide-panel{display:none;}
+.guide-panel.active{display:block;}
+.guide-card{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:20px;margin-bottom:14px;}
+.guide-step{display:flex;gap:14px;margin-bottom:16px;}
+.guide-step:last-child{margin-bottom:0;}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--a-glow);border:1px solid var(--a-dim);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--accent);flex-shrink:0;font-weight:600;}
+.step-body{flex:1;}
+.step-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.step-desc{font-size:12.5px;color:var(--t2);line-height:1.65;}
+
+.code-block{background:var(--bg);border:1px solid var(--b0);border-radius:10px;padding:16px;margin-top:10px;overflow-x:auto;}
+.code-block-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.code-lang{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;}
+.code-copy{background:var(--panel);border:1px solid var(--b0);border-radius:5px;padding:3px 9px;font-size:10.5px;color:var(--t2);cursor:pointer;transition:all .12s;}
+.code-copy:hover{border-color:var(--a-dim);color:var(--accent);}
+pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white-space:pre;}
+.kw{color:#c678dd;}.fn{color:#61afef;}.str{color:#98c379;}.cm{color:var(--t3);font-style:italic;}.num{color:#d19a66;}.op{color:var(--t2);}
+
+/* Monthly */
+.month-hero{background:linear-gradient(135deg,#0f1e40,#111827);border:1px solid var(--b1);border-radius:14px;padding:28px;text-align:center;margin-bottom:20px;}
+.month-hero-title{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;}
+.month-hero-sub{font-size:13px;color:var(--t2);}
+.month-sel{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
+.month-chip{background:var(--panel);border:1px solid var(--b0);border-radius:8px;padding:8px 16px;font-size:12.5px;color:var(--t2);cursor:pointer;transition:all .12s;}
+.month-chip:hover,.month-chip.active{border-color:var(--a-dim);color:var(--accent);background:var(--a-glow);}
+
+/* Model Switcher */
+.model-switcher {
+  display: flex;
+  gap: 3px;
+  background: var(--panel);
+  border: 1px solid var(--b0);
+  border-radius: 9px;
+  padding: 3px;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.model-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--t3);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .02em;
+}
+
+.model-btn svg {
+  width: 12px; height: 12px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.model-btn:hover { color: var(--t2); }
+
+.model-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+
+.model-btn.active.claude { color: var(--accent); }
+.model-btn.active.openai { color: var(--green); }
+
+.model-btn.disabled-model {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  .app-nav { display: none; }
+  .chat-wrap { grid-template-columns: 1fr; }
+  .sidebar, .right-panel { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    <div class="logo-mk"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+    <div class="logo-txt"><span>智投</span> AI</div>
+  </div>
+  <div class="vdiv"></div>
+  <div class="ticker-bar"><div class="ticker-track" id="tickerTrack"></div></div>
+  <div class="hdr-r">
+    <div class="live-b"><div class="live-d"></div>LIVE</div>
+    <div class="vdiv"></div>
+    <div class="hdr-t" id="hdrTime"></div>
+  </div>
+</header>
+
+<!-- ══ APP BODY ══ -->
+<div class="app-body">
+
+  <!-- LEFT NAV -->
+  <nav class="app-nav">
+    <button class="ni active" data-section="chat" data-tip="AI 對話理專">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <button class="ni" data-section="templates" data-tip="提問範本庫">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </button>
+    <button class="ni" data-section="dashboard" data-tip="AI 投資儀表板">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </button>
+    <div class="nav-sep"></div>
+    <button class="ni" data-section="valuation" data-tip="AI 估值模組">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+    </button>
+    <button class="ni" data-section="technical" data-tip="技術指標分析">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </button>
+    <button class="ni" data-section="backtest" data-tip="回測分析模組">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+    </button>
+    <button class="ni" data-section="allocation" data-tip="投資組合配置">
+      <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+    </button>
+    <div class="nav-sep"></div>
+    <button class="ni" data-section="report" data-tip="自動化投資報告">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    </button>
+    <button class="ni" data-section="monthly" data-tip="每月重點摘要">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </button>
+    <div class="nav-sep"></div>
+    <button class="ni" data-section="guide" data-tip="使用說明 & 程式範例">
+      <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="app-main">
+
+    <!-- ══ 1. CHAT ══ -->
+    <div class="sec active" id="sec-chat">
+      <div class="chat-wrap">
+        <aside class="sidebar">
+          <div class="sb-wrap">
+            <div class="sb-lbl">快速詢問</div>
+            <button class="qbtn" onclick="sendQuick('台股今天大盤走勢如何？有哪些強勢族群？')">
+              <div class="qbtn-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M3 17.5h4M5 15.5v4"/></svg></div>
+              <span class="qbtn-txt">今日大盤分析</span>
+            </button>
+            <button class="qbtn" onclick="sendQuick('請列出近期台股最熱門的5個投資題材')">
+              <div class="qbtn-ico"><svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg></div>
+              <span class="qbtn-txt">熱門投資題材</span>
+            </button>
+            <button class="qbtn" onclick="sendQuick('幫我設計適合上班族的穩健型投資組合，月薪5萬，每月投資1萬')">
+              <div class="qbtn-ico"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div>
+              <span class="qbtn-txt">投資組合規劃</span>
+            </button>
+            <button class="qbtn" onclick="sendQuick('請解釋本益比、殖利率、ROE如何用來選股')">
+              <div class="qbtn-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+              <span class="qbtn-txt">基本面指標</span>
+            </button>
+            <button class="qbtn" onclick="sendQuick('如何看懂K線圖？解釋常見的技術指標訊號')">
+              <div class="qbtn-ico"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+              <span class="qbtn-txt">技術分析入門</span>
+            </button>
+            <button class="qbtn" onclick="sendQuick('存股的條件和策略是什麼？推薦哪些標的？')">
+              <div class="qbtn-ico"><svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></svg></div>
+              <span class="qbtn-txt">存股策略</span>
+            </button>
+          </div>
+          <div class="watchlist">
+            <div class="sb-lbl">自選股</div>
+            <div class="watch-item" onclick="sendQuick('請分析台積電（2330）的投資價值與目標價')">
+              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2330</div><div class="w-name">台積電</div></div></div>
+              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
+            </div>
+            <div class="watch-item" onclick="sendQuick('請分析聯發科（2454）的投資價值')">
+              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2454</div><div class="w-name">聯發科</div></div></div>
+              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
+            </div>
+            <div class="watch-item" onclick="sendQuick('請分析鴻海（2317）的投資前景')">
+              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2317</div><div class="w-name">鴻海</div></div></div>
+              <div class="w-right"><div class="w-price">—</div><div class="w-chg dn">—</div></div>
+            </div>
+            <div class="watch-item" onclick="sendQuick('請分析緯創（3231）的AI伺服器前景')">
+              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">3231</div><div class="w-name">緯創</div></div></div>
+              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
+            </div>
+            <div class="watch-item" onclick="sendQuick('請分析中華電（2412）的殖利率與存股價值')">
+              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2412</div><div class="w-name">中華電</div></div></div>
+              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
+            </div>
+          </div>
+        </aside>
+        <section class="chat-area">
+          <div class="topbar">
+            <div class="status-dot"></div>
+            <div class="topbar-title">AI 對話理專</div>
+            <!-- Model Switcher -->
+            <div class="model-switcher" id="modelSwitcher">
+              <button class="model-btn active" id="mbClaude" onclick="setModel('claude')">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+                Claude
+              </button>
+              <button class="model-btn" id="mbOpenai" onclick="setModel('openai')">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+                GPT-4o
+              </button>
+            </div>
+            <div class="topbar-tag" id="topbarTag">claude-opus-4-5</div>
+          </div>
+          <div class="messages" id="messages">
+            <div class="welcome" id="welcomeScreen">
+              <div class="wlc-icon"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+              <div class="wlc-title">你好，我是智投 AI 理專</div>
+              <div class="wlc-sub">善用 AI 讓投資更有效率。分析個股、解讀財報、規劃策略，打造你的全方位投資系統。</div>
+              <div class="chips">
+                <div class="chip" onclick="sendQuick('台積電值得現在投資嗎？')">台積電分析</div>
+                <div class="chip" onclick="sendQuick('如何用 AI 輔助每天的投資決策？')">AI 投資策略</div>
+                <div class="chip" onclick="sendQuick('0050 和 006208 有什麼差別？')">ETF 比較</div>
+                <div class="chip" onclick="sendQuick('升息對台股的影響？')">升息影響</div>
+                <div class="chip" onclick="sendQuick('台灣有哪些值得關注的 AI 概念股？')">AI 概念股</div>
+              </div>
+            </div>
+          </div>
+          <div class="input-zone">
+            <div class="input-shell">
+              <textarea id="userInput" placeholder="詢問任何投資問題..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+              <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <div class="input-hint">Enter 送出 &nbsp;·&nbsp; Shift+Enter 換行</div>
+          </div>
+        </section>
+        <aside class="right-panel">
+          <div class="rp-sec">
+            <div class="rp-lbl">快速分析工具</div>
+            <select class="a-select" id="analysisType">
+              <option value="stock">個股分析</option>
+              <option value="news">新聞解讀</option>
+              <option value="portfolio">組合評估</option>
+              <option value="market">大盤展望</option>
+            </select>
+            <textarea class="a-textarea" id="analysisInput" placeholder="輸入股票代號或內容..."></textarea>
+            <button class="a-btn" id="rpRunBtn" onclick="runRpAnalysis()">
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>立即分析
+            </button>
+            <div class="a-result" id="rpResult"></div>
+          </div>
+          <div class="rp-sec">
+            <div class="rp-lbl">市場情緒指標</div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">台股成交量</div><div class="ind-track"><div class="ind-fill" style="width:72%;background:var(--green)"></div></div></div><div class="ind-val up">偏高</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">外資動向</div><div class="ind-track"><div class="ind-fill" style="width:60%;background:var(--green)"></div></div></div><div class="ind-val up">買超</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">融資餘額</div><div class="ind-track"><div class="ind-fill" style="width:45%;background:var(--amber)"></div></div></div><div class="ind-val" style="color:var(--amber)">中性</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">恐慌指數 VIX</div><div class="ind-track"><div class="ind-fill" style="width:28%;background:var(--green)"></div></div></div><div class="ind-val up">低位</div></div>
+          </div>
+          <div class="rp-sec">
+            <div class="rp-lbl">使用說明</div>
+            <div class="note"><div class="note-line" style="background:var(--accent)"></div><div class="note-body"><div class="note-ttl" style="color:var(--accent)">今日提示</div>每日讓 AI 整理市場新聞，節省時間聚焦決策。</div></div>
+            <div class="note"><div class="note-line" style="background:var(--amber)"></div><div class="note-body"><div class="note-ttl" style="color:var(--amber)">風險提醒</div>所有 AI 分析僅供參考，不構成投資建議。</div></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ══ 2. TEMPLATES ══ -->
+    <div class="sec" id="sec-templates">
+      <div class="sec-header">
+        <div class="sec-title">模組化 AI 提問範本庫</div>
+        <div class="sec-sub">精選提問範本，直接套用到 AI 對話，快速獲得精準分析</div>
+      </div>
+      <div class="sec-body">
+        <div class="tmpl-cats">
+          <button class="tmpl-cat-btn active" onclick="filterTmpl('all',this)">全部</button>
+          <button class="tmpl-cat-btn" onclick="filterTmpl('financial',this)">財報分析</button>
+          <button class="tmpl-cat-btn" onclick="filterTmpl('stock-pick',this)">選股操作</button>
+          <button class="tmpl-cat-btn" onclick="filterTmpl('timing',this)">精準進退場</button>
+          <button class="tmpl-cat-btn" onclick="filterTmpl('integrated',this)">整合分析</button>
+        </div>
+        <div class="tmpl-grid" id="tmplGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══ 3. DASHBOARD ══ -->
+    <div class="sec" id="sec-dashboard">
+      <div class="sec-header">
+        <div class="sec-title">AI 投資儀表板</div>
+        <div class="sec-sub">一頁整合股價走勢、財報趨勢與投資報酬率</div>
+      </div>
+      <div class="sec-body">
+        <div class="dash-grid">
+          <div class="kpi-card"><div class="kpi-label">投資組合總值</div><div class="kpi-val">NT$ 1,250,800</div><div class="kpi-chg up">▲ +12.8% 今年以來</div></div>
+          <div class="kpi-card"><div class="kpi-label">未實現損益</div><div class="kpi-val up">+142,300</div><div class="kpi-chg up">▲ +12.82%</div></div>
+          <div class="kpi-card"><div class="kpi-label">本月報酬率</div><div class="kpi-val up">+3.24%</div><div class="kpi-chg" style="color:var(--t2)">大盤本月 +2.1%</div></div>
+          <div class="kpi-card"><div class="kpi-label">持股檔數</div><div class="kpi-val">8</div><div class="kpi-chg" style="color:var(--t2)">跨 5 個產業</div></div>
+        </div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-card-title">
+              <span>投資組合淨值走勢（近 6 個月）</span>
+              <span style="color:var(--green);font-size:11px;">▲ +12.8%</span>
+            </div>
+            <div class="chart-wrap"><canvas id="portfolioChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title"><span>產業配置</span></div>
+            <div class="chart-wrap"><canvas id="allocationChart"></canvas></div>
+          </div>
+        </div>
+        <div class="holdings-row">
+          <div class="holdings-card">
+            <div class="chart-card-title"><span>持股明細</span></div>
+            <div class="holding-item"><div><div class="holding-sym">2330 台積電</div><div class="holding-name">半導體</div></div><div class="holding-val"><div class="holding-price">NT$900</div><div class="holding-pnl up">+28.4%</div></div></div>
+            <div class="holding-item"><div><div class="holding-sym">2454 聯發科</div><div class="holding-name">IC設計</div></div><div class="holding-val"><div class="holding-price">NT$1,280</div><div class="holding-pnl up">+15.2%</div></div></div>
+            <div class="holding-item"><div><div class="holding-sym">0050 元大台灣50</div><div class="holding-name">ETF</div></div><div class="holding-val"><div class="holding-price">NT$198</div><div class="holding-pnl up">+8.7%</div></div></div>
+            <div class="holding-item"><div><div class="holding-sym">2317 鴻海</div><div class="holding-name">電子製造</div></div><div class="holding-val"><div class="holding-price">NT$155</div><div class="holding-pnl dn">-2.1%</div></div></div>
+          </div>
+          <div class="holdings-card">
+            <div class="chart-card-title"><span>月績效趨勢</span></div>
+            <div class="chart-wrap"><canvas id="perfChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 4. VALUATION ══ -->
+    <div class="sec" id="sec-valuation">
+      <div class="sec-header">
+        <div class="sec-title">AI 自動化估值模組</div>
+        <div class="sec-sub">輸入財務數據，AI 自動計算合理價格區間與投資評等</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>個股估值分析</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">股票名稱 / 代號</label><input class="form-input" id="v-stock" placeholder="例：台積電 2330"></div>
+            <div class="form-group"><label class="form-label">目前股價 (NT$)</label><input class="form-input" id="v-price" placeholder="例：900" type="number"></div>
+            <div class="form-group"><label class="form-label">本益比 P/E</label><input class="form-input" id="v-pe" placeholder="例：20.5" type="number"></div>
+            <div class="form-group"><label class="form-label">股價淨值比 P/B</label><input class="form-input" id="v-pb" placeholder="例：5.2" type="number"></div>
+            <div class="form-group"><label class="form-label">ROE (%)</label><input class="form-input" id="v-roe" placeholder="例：28.5" type="number"></div>
+            <div class="form-group"><label class="form-label">EPS (NT$)</label><input class="form-input" id="v-eps" placeholder="例：43.8" type="number"></div>
+            <div class="form-group"><label class="form-label">盈餘成長率 (%)</label><input class="form-input" id="v-growth" placeholder="例：15" type="number"></div>
+            <div class="form-group"><label class="form-label">所屬產業</label>
+              <select class="form-select" id="v-sector">
+                <option>半導體</option><option>IC設計</option><option>電子製造</option><option>金融</option><option>傳產</option><option>生技</option><option>電信</option><option>其他</option>
+              </select>
+            </div>
+          </div>
+          <button class="submit-btn" id="vBtn" onclick="runValuation()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>開始估值分析
+          </button>
+        </div>
+        <div class="result-box" id="vResult">
+          <div class="result-box-head"><div class="result-box-title">估值分析報告</div><button class="copy-btn" onclick="copyResult('vContent')">複製</button></div>
+          <div class="result-content" id="vContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 5. TECHNICAL ══ -->
+    <div class="sec" id="sec-technical">
+      <div class="sec-header">
+        <div class="sec-title">技術指標分析模組</div>
+        <div class="sec-sub">解析 K 線、均線、KD、RSI 等技術指標，AI 給出買賣建議</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>技術面分析輸入</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">股票名稱 / 代號</label><input class="form-input" id="t-stock" placeholder="例：台積電 2330"></div>
+            <div class="form-group"><label class="form-label">目前股價</label><input class="form-input" id="t-price" placeholder="例：900" type="number"></div>
+            <div class="form-group"><label class="form-label">5 日均線 (MA5)</label><input class="form-input" id="t-ma5" placeholder="例：895" type="number"></div>
+            <div class="form-group"><label class="form-label">20 日均線 (MA20)</label><input class="form-input" id="t-ma20" placeholder="例：880" type="number"></div>
+            <div class="form-group"><label class="form-label">60 日均線 (MA60)</label><input class="form-input" id="t-ma60" placeholder="例：850" type="number"></div>
+            <div class="form-group"><label class="form-label">成交量趨勢</label>
+              <select class="form-select" id="t-vol"><option>放量上漲</option><option>縮量上漲</option><option>放量下跌</option><option>縮量下跌</option><option>持平</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">KD 指標 K 值</label><input class="form-input" id="t-kd-k" placeholder="例：75" type="number"></div>
+            <div class="form-group"><label class="form-label">KD 指標 D 值</label><input class="form-input" id="t-kd-d" placeholder="例：65" type="number"></div>
+            <div class="form-group"><label class="form-label">RSI (14)</label><input class="form-input" id="t-rsi" placeholder="例：68" type="number"></div>
+            <div class="form-group"><label class="form-label">近期走勢描述</label><input class="form-input" id="t-trend" placeholder="例：連3紅、突破前高"></div>
+          </div>
+          <button class="submit-btn" id="tBtn" onclick="runTechnical()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>開始技術分析
+          </button>
+        </div>
+        <div class="result-box" id="tResult">
+          <div class="result-box-head"><div class="result-box-title">技術分析報告</div><button class="copy-btn" onclick="copyResult('tContent')">複製</button></div>
+          <div class="result-content" id="tContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 6. BACKTEST ══ -->
+    <div class="sec" id="sec-backtest">
+      <div class="sec-header">
+        <div class="sec-title">回測分析模組</div>
+        <div class="sec-sub">描述投資策略，AI 模擬回測績效並給出改善建議</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>策略回測設定</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">策略名稱</label><input class="form-input" id="bt-name" placeholder="例：KD黃金交叉策略"></div>
+            <div class="form-group"><label class="form-label">回測標的</label><input class="form-input" id="bt-stock" placeholder="例：台積電 或 0050"></div>
+            <div class="form-group"><label class="form-label">回測期間</label>
+              <select class="form-select" id="bt-period"><option>近 1 年</option><option>近 3 年</option><option>近 5 年</option><option>近 10 年</option><option>2020-2024</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">初始資金</label>
+              <select class="form-select" id="bt-capital"><option>10 萬</option><option>50 萬</option><option>100 萬</option><option>500 萬</option></select>
+            </div>
+          </div>
+          <div class="form-grid cols-1" style="margin-top:0;">
+            <div class="form-group"><label class="form-label">買入條件</label><textarea class="form-ta" id="bt-buy" placeholder="例：KD K值從超賣區（20以下）向上突破D值時買入，且RSI小於50確認"></textarea></div>
+            <div class="form-group"><label class="form-label">賣出條件</label><textarea class="form-ta" id="bt-sell" placeholder="例：KD K值在超買區（80以上）向下跌破D值時賣出，或跌破成本8%停損"></textarea></div>
+          </div>
+          <button class="submit-btn" id="btBtn" onclick="runBacktest()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>開始回測分析
+          </button>
+        </div>
+        <div class="result-box" id="btResult">
+          <div class="result-box-head"><div class="result-box-title">回測分析報告</div><button class="copy-btn" onclick="copyResult('btContent')">複製</button></div>
+          <div class="result-content" id="btContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 7. ALLOCATION ══ -->
+    <div class="sec" id="sec-allocation">
+      <div class="sec-header">
+        <div class="sec-title">AI 投資組合配置</div>
+        <div class="sec-sub">輸入目前持股，AI 分析多元性並給出最佳化配置建議</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>投資組合設定</div>
+          <div class="form-grid cols-3">
+            <div class="form-group"><label class="form-label">風險承受度</label>
+              <select class="form-select" id="al-risk"><option>保守型</option><option>穩健型</option><option>積極型</option><option>高積極型</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">投資目標</label>
+              <select class="form-select" id="al-goal"><option>穩健成長</option><option>高殖利率收息</option><option>長期資本增值</option><option>退休規劃</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">投資期間</label>
+              <select class="form-select" id="al-horizon"><option>1 年以內</option><option>1-3 年</option><option>3-5 年</option><option>5-10 年</option><option>10 年以上</option></select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">目前持股明細（每行一個，格式：代號/名稱 金額或比例）</label>
+            <textarea class="form-ta" id="al-holdings" style="min-height:120px;" placeholder="例：
+2330 台積電  500,000
+0050 元大50  300,000
+2412 中華電  200,000
+2317 鴻海    150,000"></textarea>
+          </div>
+          <button class="submit-btn" id="alBtn" onclick="runAllocation()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>開始組合分析
+          </button>
+        </div>
+        <div class="result-box" id="alResult">
+          <div class="result-box-head"><div class="result-box-title">投資組合配置建議</div><button class="copy-btn" onclick="copyResult('alContent')">複製</button></div>
+          <div class="result-content" id="alContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 8. REPORT ══ -->
+    <div class="sec" id="sec-report">
+      <div class="sec-header">
+        <div class="sec-title">自動化投資報告</div>
+        <div class="sec-sub">一鍵生成專業投資分析報告，不漏接持股動態與風險提示</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>報告設定</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">報告期間</label>
+              <select class="form-select" id="rp-period"><option>本週</option><option>本月</option><option>本季</option><option>上半年</option><option>全年</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">報告重點</label>
+              <select class="form-select" id="rp-focus"><option>整體績效</option><option>風險評估</option><option>產業趨勢</option><option>全面分析</option></select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">投資組合（持股內容）</label>
+            <textarea class="form-ta" id="rp-portfolio" style="min-height:120px;" placeholder="例：
+台積電 2330 x 500股 成本680元
+聯發科 2454 x 100股 成本1,050元
+0050 x 2000股 成本165元
+中華電 2412 x 1000股 成本120元"></textarea>
+          </div>
+          <button class="submit-btn" id="rpBtn" onclick="runReport()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>生成投資報告
+          </button>
+        </div>
+        <div class="result-box" id="rpResult">
+          <div class="result-box-head"><div class="result-box-title">投資分析報告</div><button class="copy-btn" onclick="copyResult('rpContent')">複製</button></div>
+          <div class="result-content" id="rpContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 9. MONTHLY ══ -->
+    <div class="sec" id="sec-monthly">
+      <div class="sec-header">
+        <div class="sec-title">每月重點摘要推播</div>
+        <div class="sec-sub">AI 自動整理本月市場重點，重要指標與風險提醒不遺漏</div>
+      </div>
+      <div class="sec-body">
+        <div class="month-hero">
+          <div class="month-hero-title">選擇月份，生成專屬摘要</div>
+          <div class="month-hero-sub">AI 整合大盤走勢、產業動向、籌碼變化，生成完整月報</div>
+          <div class="month-sel">
+            <div class="month-chip active" data-month="2025年3月">2025 年 3 月</div>
+            <div class="month-chip" data-month="2025年2月">2025 年 2 月</div>
+            <div class="month-chip" data-month="2025年1月">2025 年 1 月</div>
+            <div class="month-chip" data-month="2024年12月">2024 年 12 月</div>
+            <div class="month-chip" data-month="2024年11月">2024 年 11 月</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:16px;">
+          <button class="submit-btn" id="mBtn" onclick="runMonthly()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>生成本月摘要
+          </button>
+          <button class="submit-btn" style="background:var(--panel);border:1px solid var(--b1);color:var(--t2);" onclick="sendMonthlyToChat()">
+            <svg viewBox="0 0 24 24" style="stroke:currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>繼續在 AI 討論
+          </button>
+        </div>
+        <div class="result-box" id="mResult">
+          <div class="result-box-head"><div class="result-box-title">月度市場摘要</div><button class="copy-btn" onclick="copyResult('mContent')">複製全文</button></div>
+          <div class="result-content" id="mContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 10. GUIDE ══ -->
+    <div class="sec" id="sec-guide">
+      <div class="sec-header">
+        <div class="sec-title">使用說明 & Python 程式範例</div>
+        <div class="sec-sub">AI 自動化投資關鍵說明書，含 Python 程式碼範例</div>
+      </div>
+      <div class="sec-body">
+        <div class="guide-tabs">
+          <button class="guide-tab active" onclick="switchGuide('overview',this)">系統說明</button>
+          <button class="guide-tab" onclick="switchGuide('python',this)">Python 範例</button>
+          <button class="guide-tab" onclick="switchGuide('workflow',this)">操作流程</button>
+        </div>
+
+        <div class="guide-panel active" id="gp-overview">
+          <div class="guide-card">
+            <div class="chart-card-title" style="margin-bottom:16px;font-size:13px;color:var(--text);"><span>智投 AI 全方位投資系統 — 功能總覽</span></div>
+            <div class="guide-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">AI 對話理專</div><div class="step-desc">用自然語言詢問任何投資問題。支援串流回覆、對話歷史記憶，可詢問個股分析、策略規劃、新聞解讀等。</div></div></div>
+            <div class="guide-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">模組化提問範本庫</div><div class="step-desc">16 個精選投資提問範本，涵蓋財報分析、選股操作、進退場時機、整合分析。一鍵套用，直接與 AI 對話。</div></div></div>
+            <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">AI 投資儀表板</div><div class="step-desc">視覺化呈現投資組合淨值、產業配置、持股明細與月績效走勢。</div></div></div>
+            <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">AI 自動化估值模組</div><div class="step-desc">輸入 P/E、ROE、EPS 等財務數據，AI 自動計算合理價格區間、安全邊際，給出投資評等。</div></div></div>
+            <div class="guide-step"><div class="step-num">5</div><div class="step-body"><div class="step-title">技術指標分析模組</div><div class="step-desc">輸入均線、KD、RSI 等技術指標數值，AI 解讀訊號並給出操作建議（進場點、停損點、目標價）。</div></div></div>
+            <div class="guide-step"><div class="step-num">6</div><div class="step-body"><div class="step-title">回測分析模組</div><div class="step-desc">描述你的投資策略（買入/賣出條件），AI 模擬回測並評估年化報酬、最大回撤、策略優缺點。</div></div></div>
+            <div class="guide-step"><div class="step-num">7</div><div class="step-body"><div class="step-title">投資組合配置</div><div class="step-desc">輸入當前持股，AI 分析多元性、集中風險，給出最佳化配置建議。</div></div></div>
+            <div class="guide-step"><div class="step-num">8</div><div class="step-body"><div class="step-title">自動化投資報告 + 每月摘要</div><div class="step-desc">一鍵生成完整投資分析報告，或選擇月份生成市場重點摘要推播。</div></div></div>
+          </div>
+        </div>
+
+        <div class="guide-panel" id="gp-python">
+          <div class="guide-card">
+            <div class="step-title" style="margin-bottom:16px;font-size:14px;">Python 股票資料自動擷取</div>
+            <div class="code-block">
+              <div class="code-block-header"><div class="code-lang">Python · yfinance</div><button class="code-copy" onclick="copyCode(this)">複製</button></div>
+              <pre><span class="cm"># 安裝：pip install yfinance pandas</span>
+<span class="kw">import</span> yfinance <span class="kw">as</span> yf
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="cm"># 下載台積電股價（台股加 .TW）</span>
+stock <span class="op">=</span> yf.<span class="fn">Ticker</span>(<span class="str">"2330.TW"</span>)
+df <span class="op">=</span> stock.<span class="fn">history</span>(period<span class="op">=</span><span class="str">"6mo"</span>)
+
+<span class="cm"># 計算技術指標</span>
+df[<span class="str">'MA5'</span>]  <span class="op">=</span> df[<span class="str">'Close'</span>].<span class="fn">rolling</span>(<span class="num">5</span>).<span class="fn">mean</span>()
+df[<span class="str">'MA20'</span>] <span class="op">=</span> df[<span class="str">'Close'</span>].<span class="fn">rolling</span>(<span class="num">20</span>).<span class="fn">mean</span>()
+df[<span class="str">'MA60'</span>] <span class="op">=</span> df[<span class="str">'Close'</span>].<span class="fn">rolling</span>(<span class="num">60</span>).<span class="fn">mean</span>()
+
+<span class="cm"># 輸出最近10筆</span>
+<span class="fn">print</span>(df[[<span class="str">'Close'</span>, <span class="str">'MA5'</span>, <span class="str">'MA20'</span>, <span class="str">'MA60'</span>, <span class="str">'Volume'</span>]].<span class="fn">tail</span>(<span class="num">10</span>))</pre>
+            </div>
+          </div>
+          <div class="guide-card">
+            <div class="step-title" style="margin-bottom:16px;font-size:14px;">計算 KD 指標（隨機指標）</div>
+            <div class="code-block">
+              <div class="code-block-header"><div class="code-lang">Python · 技術指標</div><button class="code-copy" onclick="copyCode(this)">複製</button></div>
+              <pre><span class="kw">def</span> <span class="fn">calc_kd</span>(df, n<span class="op">=</span><span class="num">9</span>, m<span class="op">=</span><span class="num">3</span>):
+    low_min  <span class="op">=</span> df[<span class="str">'Low'</span>].<span class="fn">rolling</span>(n).<span class="fn">min</span>()
+    high_max <span class="op">=</span> df[<span class="str">'High'</span>].<span class="fn">rolling</span>(n).<span class="fn">max</span>()
+    rsv <span class="op">=</span> (df[<span class="str">'Close'</span>] <span class="op">-</span> low_min) <span class="op">/</span> (high_max <span class="op">-</span> low_min) <span class="op">*</span> <span class="num">100</span>
+    df[<span class="str">'K'</span>] <span class="op">=</span> rsv.<span class="fn">ewm</span>(com<span class="op">=</span>m<span class="op">-</span><span class="num">1</span>, adjust<span class="op">=</span><span class="kw">False</span>).<span class="fn">mean</span>()
+    df[<span class="str">'D'</span>] <span class="op">=</span> df[<span class="str">'K'</span>].<span class="fn">ewm</span>(com<span class="op">=</span>m<span class="op">-</span><span class="num">1</span>, adjust<span class="op">=</span><span class="kw">False</span>).<span class="fn">mean</span>()
+    <span class="kw">return</span> df
+
+df <span class="op">=</span> <span class="fn">calc_kd</span>(df)
+<span class="cm"># 黃金交叉：K 向上穿越 D</span>
+signal <span class="op">=</span> (df[<span class="str">'K'</span>] <span class="op">></span> df[<span class="str">'D'</span>]) <span class="op">&</span> (df[<span class="str">'K'</span>].<span class="fn">shift</span>(<span class="num">1</span>) <span class="op"><=</span> df[<span class="str">'D'</span>].<span class="fn">shift</span>(<span class="num">1</span>))
+<span class="fn">print</span>(<span class="str">"黃金交叉日期："</span>, df[signal].index.<span class="fn">tolist</span>())</pre>
+            </div>
+          </div>
+          <div class="guide-card">
+            <div class="step-title" style="margin-bottom:16px;font-size:14px;">基本估值計算（本益比法）</div>
+            <div class="code-block">
+              <div class="code-block-header"><div class="code-lang">Python · 估值計算</div><button class="code-copy" onclick="copyCode(this)">複製</button></div>
+              <pre><span class="kw">def</span> <span class="fn">pe_valuation</span>(eps, pe_low, pe_high, growth):
+    <span class="str">"""
+    eps      : 每股盈餘
+    pe_low   : 歷史本益比低點
+    pe_high  : 歷史本益比高點
+    growth   : 盈餘年成長率 (%)
+    """</span>
+    fair_low  <span class="op">=</span> eps <span class="op">*</span> pe_low
+    fair_high <span class="op">=</span> eps <span class="op">*</span> pe_high
+    fair_mid  <span class="op">=</span> (fair_low <span class="op">+</span> fair_high) <span class="op">/</span> <span class="num">2</span>
+    
+    <span class="cm"># 成長調整（PEG ratio）</span>
+    peg_fair <span class="op">=</span> eps <span class="op">*</span> growth  <span class="cm"># 簡化版 PEG</span>
+    
+    <span class="fn">print</span>(<span class="str">f"合理區間：{fair_low:.0f} ~ {fair_high:.0f}"</span>)
+    <span class="fn">print</span>(<span class="str">f"中間值：  {fair_mid:.0f}"</span>)
+    <span class="fn">print</span>(<span class="str">f"PEG 估值：{peg_fair:.0f}"</span>)
+
+<span class="cm"># 範例：台積電</span>
+<span class="fn">pe_valuation</span>(eps<span class="op">=</span><span class="num">43.8</span>, pe_low<span class="op">=</span><span class="num">15</span>, pe_high<span class="op">=</span><span class="num">25</span>, growth<span class="op">=</span><span class="num">20</span>)</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-panel" id="gp-workflow">
+          <div class="guide-card">
+            <div class="step-title" style="margin-bottom:16px;font-size:14px;">建議每日 AI 投資工作流</div>
+            <div class="guide-step"><div class="step-num">AM</div><div class="step-body"><div class="step-title">09:00 — 開盤前準備</div><div class="step-desc">使用「每月摘要」查看近期市場趨勢。至 AI 對話詢問「今日大盤展望與需注意的事件」。</div></div></div>
+            <div class="guide-step"><div class="step-num">AM</div><div class="step-body"><div class="step-title">09:30 — 盤中觀察</div><div class="step-desc">有興趣的個股，使用「技術指標分析」模組輸入即時數據，獲得 AI 進出場建議。</div></div></div>
+            <div class="guide-step"><div class="step-num">PM</div><div class="step-body"><div class="step-title">13:30 — 收盤後檢視</div><div class="step-desc">使用「AI 對話」詢問今日市場重點。有財報時用「AI 估值模組」重新評估目標價。</div></div></div>
+            <div class="guide-step"><div class="step-num">週</div><div class="step-body"><div class="step-title">每週五 — 組合健診</div><div class="step-desc">使用「投資組合配置」模組檢視本週組合表現與集中度風險，必要時調整配置。</div></div></div>
+            <div class="guide-step"><div class="step-num">月</div><div class="step-body"><div class="step-title">月底 — 生成月報</div><div class="step-desc">使用「自動化投資報告」生成本月完整報告，並搭配「每月摘要」進行下月規劃。</div></div></div>
+          </div>
+          <div class="guide-card">
+            <div class="step-title" style="margin-bottom:16px;font-size:14px;">AI 提問技巧 — 讓分析更精準</div>
+            <div class="guide-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">提供具體背景資訊</div><div class="step-desc">不說「分析台積電」，而說「我在 680 元買入台積電，現在 900 元，持有 6 個月，請問是否應該獲利了結？」</div></div></div>
+            <div class="guide-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">說明你的投資目標</div><div class="step-desc">告訴 AI 你的風險承受度（保守/積極）、投資期間（短中長期）、目標報酬率，讓建議更符合需求。</div></div></div>
+            <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">善用範本庫再客製化</div><div class="step-desc">從「提問範本」庫中選擇適合的範本，發送到對話後，再追加你的個人資訊進一步提問。</div></div></div>
+            <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">連續追問深化分析</div><div class="step-desc">AI 有對話記憶。得到初步分析後，繼續追問「那停損點在哪裡？」「如果升息怎麼辦？」深化討論。</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end app-main -->
+</div><!-- end app-body -->
+
+<script>
+/* ═══════════════════════════
+   GLOBALS
+═══════════════════════════ */
+let chatHistory = [];
+let chatBusy = false;
+let selectedMonth = '2025年3月';
+let currentProvider = 'claude'; // 'claude' | 'openai'
+
+/* ═══════════════════════════
+   MODEL SWITCHER
+═══════════════════════════ */
+async function initModels() {
+  try {
+    const r = await fetch('/api/models');
+    const d = await r.json();
+
+    const btnC = document.getElementById('mbClaude');
+    const btnO = document.getElementById('mbOpenai');
+
+    if (!d.claude) btnC.classList.add('disabled-model');
+    if (!d.openai) btnO.classList.add('disabled-model');
+
+    if (d.default) setModel(d.default);
+  } catch {}
+}
+
+function setModel(provider) {
+  const btnC = document.getElementById('mbClaude');
+  const btnO = document.getElementById('mbOpenai');
+
+  if (provider === 'openai' && btnO.classList.contains('disabled-model')) return;
+  if (provider === 'claude' && btnC.classList.contains('disabled-model')) return;
+
+  currentProvider = provider;
+
+  btnC.classList.remove('active', 'claude', 'openai');
+  btnO.classList.remove('active', 'claude', 'openai');
+
+  if (provider === 'claude') {
+    btnC.classList.add('active', 'claude');
+    document.getElementById('topbarTag').textContent = 'claude-opus-4-5';
+  } else {
+    btnO.classList.add('active', 'openai');
+    document.getElementById('topbarTag').textContent = 'gpt-4o';
+  }
+}
+
+initModels();
+
+/* ═══════════════════════════
+   TICKER
+═══════════════════════════ */
+const ticks=[
+  {sym:'台積電',val:'900.00',chg:'+1.50%',up:true},{sym:'聯發科',val:'1,280',chg:'+2.10%',up:true},
+  {sym:'鴻海',val:'155.5',chg:'-0.32%',up:false},{sym:'台指期',val:'22,450',chg:'+0.80%',up:true},
+  {sym:'S&P500',val:'5,623',chg:'+0.41%',up:true},{sym:'NASDAQ',val:'17,890',chg:'+0.63%',up:true},
+  {sym:'道瓊',val:'41,200',chg:'-0.12%',up:false},{sym:'USD/TWD',val:'31.85',chg:'-0.20%',up:false},
+  {sym:'黃金',val:'3,020',chg:'+0.91%',up:true},{sym:'WTI',val:'72.4',chg:'-0.54%',up:false},
+];
+document.getElementById('tickerTrack').innerHTML=[...ticks,...ticks].map(t=>
+  `<div class="tick"><span class="tick-sym">${t.sym}</span><span class="tick-val">${t.val}</span><span class="${t.up?'tick-up':'tick-dn'}">${t.up?'▲':'▼'} ${t.chg}</span></div>`
+).join('');
+
+/* ═══════════════════════════
+   CLOCK
+═══════════════════════════ */
+function clock(){const n=new Date();document.getElementById('hdrTime').textContent=n.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+'  '+n.toLocaleTimeString('zh-TW',{hour12:false});}
+clock();setInterval(clock,1000);
+
+/* ═══════════════════════════
+   NAV SWITCHING
+═══════════════════════════ */
+document.querySelectorAll('.ni').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sec-'+btn.dataset.section).classList.add('active');
+    if(btn.dataset.section==='dashboard') initCharts();
+  });
+});
+
+/* ═══════════════════════════
+   CHAT
+═══════════════════════════ */
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+function fmt(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code>$1</code>')
+    .replace(/\n/g,'<br>');
+}
+
+const aiAv=`<div class="msg-av"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>`;
+const usAv=`<div class="msg-av"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+
+function addMsg(role,content,streaming=false){
+  document.getElementById('welcomeScreen')?.remove();
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  const inner=streaming?`<div class="typing"><span></span><span></span><span></span></div>`:fmt(content);
+  div.innerHTML=`${role==='ai'?aiAv:usAv}<div class="msg-bbl">${inner}</div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+  return div.querySelector('.msg-bbl');
+}
+
+async function sendMessage(){
+  const inp=document.getElementById('userInput');
+  const txt=inp.value.trim();
+  if(!txt||chatBusy)return;
+  chatBusy=true;document.getElementById('sendBtn').disabled=true;
+  inp.value='';inp.style.height='auto';
+  addMsg('user',txt);chatHistory.push({role:'user',content:txt});
+  const bbl=addMsg('ai','',true);
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:chatHistory, provider: currentProvider})});
+    const reader=res.body.getReader();const dec=new TextDecoder();let full='';
+    bbl.innerHTML='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      for(const line of dec.decode(value).split('\n')){
+        if(line.startsWith('data: ')&&line!=='data: [DONE]'){
+          try{full+=JSON.parse(line.slice(6)).text;bbl.innerHTML=fmt(full);document.getElementById('messages').scrollTop=9e9;}catch{}
+        }
+      }
+    }
+    chatHistory.push({role:'assistant',content:full});
+    document.getElementById('topbarTag').textContent=`${chatHistory.length/2} 輪對話`;
+  }catch{bbl.innerHTML='<span style="color:var(--red)">連線失敗，請稍後重試</span>';}
+  chatBusy=false;document.getElementById('sendBtn').disabled=false;inp.focus();
+}
+
+function sendQuick(text){
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelector('[data-section="chat"]').classList.add('active');
+  document.getElementById('sec-chat').classList.add('active');
+  document.getElementById('userInput').value=text;sendMessage();
+}
+
+/* Right panel quick analysis */
+const rpPh={stock:'輸入股票代號',news:'貼上財經新聞...',portfolio:'列出持股與比例...',market:'點擊分析，AI生成大盤展望'};
+document.getElementById('analysisType').addEventListener('change',function(){document.getElementById('analysisInput').placeholder=rpPh[this.value];});
+
+async function runRpAnalysis(){
+  const type=document.getElementById('analysisType').value;
+  const content=document.getElementById('analysisInput').value.trim();
+  const result=document.getElementById('rpResult');
+  const btn=document.getElementById('rpRunBtn');
+  if(type!=='market'&&!content){document.getElementById('analysisInput').focus();return;}
+  btn.disabled=true;btn.innerHTML='<div class="spin"></div> 分析中';result.classList.remove('show');
+  try{const r=await fetch('/api/quick-analysis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,content,provider:currentProvider})});const d=await r.json();result.textContent=d.result;result.classList.add('show');}
+  catch{result.textContent='分析失敗';result.classList.add('show');}
+  btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>立即分析';
+}
+
+/* ═══════════════════════════
+   TEMPLATES
+═══════════════════════════ */
+const templates=[
+  {cat:'financial',catLabel:'財報分析',color:'#3d82f6',title:'季報深度分析',desc:'完整解析單季財報，找出營收/獲利關鍵變化',
+   prompt:'請幫我深度分析 [股票名稱] 最新一季財報：\n1. 營收成長率與年同期比較\n2. 毛利率/營益率/淨利率變化\n3. EPS 是否符合預期\n4. 各事業部表現\n5. 重要費用項目變化\n6. 下季展望與法說會重點\n7. 是否調整目標價'},
+  {cat:'financial',catLabel:'財報分析',color:'#3d82f6',title:'年報財務健康度',desc:'評估公司長期財務結構與安全邊際',
+   prompt:'請評估 [股票名稱] 的財務健康度：\n1. 負債比率與流動比率\n2. 現金流量（自由現金流）\n3. ROE / ROA 5年趨勢\n4. 應收帳款週轉率\n5. 存貨管理效率\n6. 是否有財務造假風險\n7. 財務評分（1-10分）'},
+  {cat:'financial',catLabel:'財報分析',color:'#3d82f6',title:'EPS 成長分析',desc:'追蹤盈餘成長軌跡，預估未來 EPS',
+   prompt:'請分析 [股票名稱] 的 EPS 成長性：\n1. 近5年EPS趨勢\n2. 成長率是否加速/減速\n3. 本業vs業外貢獻比例\n4. 未來3年EPS預估\n5. 達成預估的主要風險\n6. 對應合理本益比區間'},
+  {cat:'financial',catLabel:'財報分析',color:'#3d82f6',title:'殖利率存股評估',desc:'評估存股標的的股利穩定性與配發能力',
+   prompt:'請評估 [股票名稱] 的存股價值：\n1. 近5年股利紀錄（現金+股票）\n2. 殖利率計算（以現價）\n3. 配息來源穩定性（自由現金流覆蓋率）\n4. 股利成長趨勢\n5. 與定存/債券比較\n6. 建議買入殖利率區間\n7. 風險提醒'},
+  {cat:'stock-pick',catLabel:'選股操作',color:'#22c55e',title:'成長股篩選條件',desc:'找出高成長、高品質的潛力個股',
+   prompt:'請幫我分析 [股票名稱] 是否符合成長股條件：\n1. 營收成長率（>15%為佳）\n2. 毛利率趨勢（擴張中？）\n3. 市場份額是否持續擴大\n4. 競爭護城河評估\n5. 成長驅動力（AI/電動車/半導體等）\n6. PEG ratio 評估\n7. 成長股評分（1-10）'},
+  {cat:'stock-pick',catLabel:'選股操作',color:'#22c55e',title:'AI 自動估值分析',desc:'自動計算多種估值方法的合理價格',
+   prompt:'請對 [股票名稱] 進行多方法估值：\n1. 本益比法（歷史PE區間）\n2. 股價淨值比法\n3. 殖利率法（若適用）\n4. DCF 現金流折現（簡化版）\n5. 同業比較估值\n6. 綜合合理價格區間\n7. 目前股價偏貴/合理/便宜\n8. 買入建議價位'},
+  {cat:'stock-pick',catLabel:'選股操作',color:'#22c55e',title:'產業體質篩選',desc:'評估產業競爭力與個股在產業中的地位',
+   prompt:'請分析 [產業名稱] 產業及 [股票名稱] 的體質：\n1. 產業景氣循環位置\n2. 供需現況分析\n3. 主要競爭者比較\n4. [股票名稱] 的市場地位\n5. 未來3年產業展望\n6. 潛在顛覆性風險\n7. 投資建議'},
+  {cat:'stock-pick',catLabel:'選股操作',color:'#22c55e',title:'投資組合配置 Prompt',desc:'根據風險偏好設計最佳組合比例',
+   prompt:'請為我設計投資組合：\n風險偏好：[保守/穩健/積極]\n投資金額：[金額]\n投資期間：[期間]\n\n請提供：\n1. 各資產類別建議比例\n2. 推薦的具體標的（含比例）\n3. ETF vs 個股比例建議\n4. 國內外資產配置\n5. 定期定額建議\n6. 何時該再平衡'},
+  {cat:'timing',catLabel:'精準進退場',color:'#f59e0b',title:'股價趨勢分析系統',desc:'透析當前技術走勢，判斷多空轉折',
+   prompt:'請分析 [股票名稱] 的股價趨勢：\n目前股價：[價格]\n\n請提供：\n1. 均線多空排列判斷\n2. 趨勢通道分析\n3. 重要支撐位（近期低點）\n4. 重要壓力位（前高/均線）\n5. 成交量配合度\n6. 趨勢反轉訊號\n7. 短中長期趨勢評估'},
+  {cat:'timing',catLabel:'精準進退場',color:'#f59e0b',title:'技術指標買入訊號',desc:'綜合多個技術指標判斷最佳進場時機',
+   prompt:'請判斷 [股票名稱] 的買入時機：\nK值：[值] D值：[值] RSI：[值]\n均線：MA5=[值] MA20=[值]\n\n請分析：\n1. KD黃金交叉確認\n2. RSI是否離開超賣\n3. 均線支撐確認\n4. 建議分批買入策略\n5. 進場點位建議\n6. 初步停損設定\n7. 預期目標價'},
+  {cat:'timing',catLabel:'精準進退場',color:'#f59e0b',title:'停損停利策略設定',desc:'根據波動度設定科學的風險管理策略',
+   prompt:'請幫我制定 [股票名稱] 的停損停利策略：\n買入價格：[價格]\n持股數量：[股數]\n\n請提供：\n1. 技術面停損點位（跌破哪條均線？）\n2. 固定比例停損建議（8%/10%？）\n3. 移動停損策略\n4. 分段停利計畫（30%/50%/100%）\n5. 停利訊號判斷\n6. 心理停損原則'},
+  {cat:'timing',catLabel:'精準進退場',color:'#f59e0b',title:'回測策略評估',desc:'評估交易策略的歷史績效與改進空間',
+   prompt:'請評估以下投資策略：\n策略：[描述你的買賣規則]\n標的：[股票]\n\n請分析：\n1. 策略邏輯合理性\n2. 歷史類似策略績效\n3. 策略優點\n4. 策略弱點（哪種市場環境失效）\n5. 改進建議\n6. 建議搭配的輔助指標\n7. 預期年化報酬估計'},
+  {cat:'integrated',catLabel:'整合分析',color:'#a78bfa',title:'個股完整健診報告',desc:'全方位評估一檔股票的投資價值',
+   prompt:'請對 [股票名稱] 進行完整投資健診：\n\n1. 公司基本面評估（商業模式/競爭優勢）\n2. 財務健康度（EPS/ROE/負債）\n3. 技術面分析（趨勢/指標）\n4. 籌碼面分析（外資/投信動向）\n5. 估值評估（合理區間）\n6. 風險因素清單\n7. 催化劑（何時會上漲？）\n8. 投資建議（買/持/賣）\n9. 目標價與停損點'},
+  {cat:'integrated',catLabel:'整合分析',color:'#a78bfa',title:'產業輪動分析',desc:'掌握哪些產業正在輪動，提前佈局',
+   prompt:'請分析目前台股的產業輪動狀況：\n\n1. 目前景氣循環位置判斷\n2. 過去1個月最強勢產業（及原因）\n3. 過去1個月最弱勢產業\n4. 預計下一波輪動方向\n5. 具體建議標的（各產業1-2檔）\n6. 資金從哪裡流向哪裡\n7. 外資/投信的主要操作方向'},
+  {cat:'integrated',catLabel:'整合分析',color:'#a78bfa',title:'總經環境投資評估',desc:'結合總體經濟判斷最佳投資策略',
+   prompt:'請分析目前總體經濟環境對投資的影響：\n\n1. 全球利率政策走向\n2. 通膨趨勢評估\n3. 美元強弱對台股影響\n4. 中國經濟對台股衝擊\n5. AI科技週期影響\n6. 目前應增持/減持哪類資產\n7. 防禦性配置建議'},
+  {cat:'integrated',catLabel:'整合分析',color:'#a78bfa',title:'投資組合整體健診',desc:'全面檢視組合績效、風險與優化空間',
+   prompt:'請為我的投資組合進行整體健診：\n持股：[列出所有持股與比例]\n\n請分析：\n1. 報酬貢獻度排名\n2. 風險集中度問題\n3. 產業/地區過度集中嗎\n4. 與大盤相關性評估\n5. 哪些持股應減碼\n6. 哪些應加碼或新增\n7. 整體組合優化建議'},
+];
+
+function buildTemplates(filter='all'){
+  const grid=document.getElementById('tmplGrid');
+  const filtered=filter==='all'?templates:templates.filter(t=>t.cat===filter);
+  grid.innerHTML=filtered.map((t,i)=>`
+    <div class="tmpl-card" data-idx="${i}">
+      <div class="tmpl-card-header">
+        <span class="tmpl-cat-tag" style="background:${t.color}22;color:${t.color}">${t.catLabel}</span>
+      </div>
+      <div class="tmpl-card-title">${t.title}</div>
+      <div class="tmpl-card-desc">${t.desc}</div>
+      <div class="tmpl-preview">${t.prompt.slice(0,80)}...</div>
+      <div class="tmpl-actions">
+        <button class="tmpl-use-btn" onclick="useTemplate(${templates.indexOf(t)})">套用到對話</button>
+        <button class="tmpl-copy-btn" onclick="copyTemplate(${templates.indexOf(t)})">複製</button>
+      </div>
+    </div>
+  `).join('');
+}
+buildTemplates();
+
+function filterTmpl(cat,btn){
+  document.querySelectorAll('.tmpl-cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTemplates(cat);
+}
+
+function useTemplate(idx){
+  const t=templates[idx];
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelector('[data-section="chat"]').classList.add('active');
+  document.getElementById('sec-chat').classList.add('active');
+  document.getElementById('userInput').value=t.prompt;
+  document.getElementById('userInput').focus();
+}
+
+function copyTemplate(idx){navigator.clipboard.writeText(templates[idx].prompt);}
+
+/* ═══════════════════════════
+   CHARTS (DASHBOARD)
+═══════════════════════════ */
+let chartsInited=false;
+function initCharts(){
+  if(chartsInited)return;chartsInited=true;
+
+  const chartDefaults={color:'rgba(232,237,245,0.7)',borderColor:'rgba(232,237,245,0.08)',gridColor:'rgba(232,237,245,0.05)'};
+
+  /* Portfolio line chart */
+  const ctx1=document.getElementById('portfolioChart').getContext('2d');
+  const labels=['9月','10月','11月','12月','1月','2月','3月'];
+  const vals=[1108500,1138200,1095300,1201400,1175800,1218900,1250800];
+  const grad=ctx1.createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,'rgba(61,130,246,0.3)');grad.addColorStop(1,'rgba(61,130,246,0.01)');
+  new Chart(ctx1,{type:'line',data:{labels,datasets:[{data:vals,borderColor:'#3d82f6',backgroundColor:grad,borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#3d82f6'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:chartDefaults.gridColor},ticks:{color:'#8897ae',font:{size:10}}},y:{grid:{color:chartDefaults.gridColor},ticks:{color:'#8897ae',font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'}}}}});
+
+  /* Allocation donut */
+  const ctx2=document.getElementById('allocationChart').getContext('2d');
+  new Chart(ctx2,{type:'doughnut',data:{labels:['半導體','IC設計','ETF','電子製造','金融','其他'],datasets:[{data:[35,20,18,12,10,5],backgroundColor:['#3d82f6','#22c55e','#a78bfa','#f59e0b','#38bdf8','#64748b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8897ae',font:{size:10},boxWidth:10,padding:8}}},cutout:'65%'}});
+
+  /* Monthly performance bar */
+  const ctx3=document.getElementById('perfChart').getContext('2d');
+  new Chart(ctx3,{type:'bar',data:{labels:['10月','11月','12月','1月','2月','3月'],datasets:[{data:[2.8,-3.5,8.7,-2.1,3.6,3.24],backgroundColor:d=>d.raw>=0?'rgba(34,197,94,0.7)':'rgba(239,68,68,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8897ae',font:{size:10}}},y:{grid:{color:'rgba(232,237,245,0.05)'},ticks:{color:'#8897ae',font:{size:10},callback:v=>v+'%'}}}}});
+}
+
+/* ═══════════════════════════
+   ANALYSIS MODULES
+═══════════════════════════ */
+async function callApi(url,body,btnId,resultId,contentId){
+  const btn=document.getElementById(btnId);
+  const box=document.getElementById(resultId);
+  const content=document.getElementById(contentId);
+  btn.disabled=true;
+  const orig=btn.innerHTML;
+  btn.innerHTML='<div class="spin"></div> AI 分析中...';
+  box.classList.remove('show');
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body, provider: currentProvider})});
+    const d=await r.json();
+    content.textContent=d.result;
+    box.classList.add('show');
+  }catch{content.textContent='分析失敗，請稍後再試';box.classList.add('show');}
+  btn.disabled=false;btn.innerHTML=orig;
+}
+
+function runValuation(){
+  callApi('/api/valuation',{
+    stock:document.getElementById('v-stock').value,price:document.getElementById('v-price').value,
+    pe:document.getElementById('v-pe').value,pb:document.getElementById('v-pb').value,
+    roe:document.getElementById('v-roe').value,eps:document.getElementById('v-eps').value,
+    growth:document.getElementById('v-growth').value,sector:document.getElementById('v-sector').value
+  },'vBtn','vResult','vContent');
+}
+
+function runTechnical(){
+  callApi('/api/technical',{
+    stock:document.getElementById('t-stock').value,price:document.getElementById('t-price').value,
+    ma5:document.getElementById('t-ma5').value,ma20:document.getElementById('t-ma20').value,
+    ma60:document.getElementById('t-ma60').value,volume:document.getElementById('t-vol').value,
+    kd_k:document.getElementById('t-kd-k').value,kd_d:document.getElementById('t-kd-d').value,
+    rsi:document.getElementById('t-rsi').value,trend:document.getElementById('t-trend').value
+  },'tBtn','tResult','tContent');
+}
+
+function runBacktest(){
+  callApi('/api/backtest',{
+    strategy:document.getElementById('bt-name').value,stock:document.getElementById('bt-stock').value,
+    period:document.getElementById('bt-period').value,capital:document.getElementById('bt-capital').value,
+    buyRule:document.getElementById('bt-buy').value,sellRule:document.getElementById('bt-sell').value
+  },'btBtn','btResult','btContent');
+}
+
+function runAllocation(){
+  callApi('/api/allocation',{
+    holdings:document.getElementById('al-holdings').value,risk:document.getElementById('al-risk').value,
+    goal:document.getElementById('al-goal').value,horizon:document.getElementById('al-horizon').value
+  },'alBtn','alResult','alContent');
+}
+
+function runReport(){
+  callApi('/api/report',{
+    portfolio:document.getElementById('rp-portfolio').value,
+    period:document.getElementById('rp-period').value,
+    focus:document.getElementById('rp-focus').value
+  },'rpBtn','rpResult','rpContent');
+}
+
+/* Monthly */
+document.querySelectorAll('.month-chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.month-chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');selectedMonth=c.dataset.month;
+  });
+});
+
+function runMonthly(){
+  callApi('/api/monthly',{month:selectedMonth},'mBtn','mResult','mContent');
+}
+
+function sendMonthlyToChat(){
+  const c=document.getElementById('mContent').textContent;
+  if(!c){runMonthly();return;}
+  sendQuick('以下是'+selectedMonth+'的市場摘要，請幫我進一步分析並給出下月投資策略建議：\n\n'+c.slice(0,500));
+}
+
+/* ═══════════════════════════
+   GUIDE TABS
+═══════════════════════════ */
+function switchGuide(id,btn){
+  document.querySelectorAll('.guide-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.guide-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('gp-'+id).classList.add('active');
+}
+
+/* ═══════════════════════════
+   UTILITIES
+═══════════════════════════ */
+function copyResult(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent);
+  event.target.textContent='已複製';setTimeout(()=>event.target.textContent='複製',2000);
+}
+
+function copyCode(btn){
+  const pre=btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent);
+  btn.textContent='已複製';setTimeout(()=>btn.textContent='複製',2000);
+}
+</script>
+</body>
+</html>
