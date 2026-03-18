@@ -61,32 +61,22 @@ header{
 .app-nav{
   background:var(--surface);border-right:1px solid var(--b0);
   display:flex;flex-direction:column;align-items:center;
-  padding:10px 0;gap:4px;overflow-y:auto;scrollbar-width:none;z-index:100;
+  padding:10px 0;gap:2px;overflow-y:auto;scrollbar-width:none;z-index:100;
 }
 .app-nav::-webkit-scrollbar{display:none;}
-.nav-sep{width:32px;height:1px;background:var(--b0);margin:6px 0;flex-shrink:0;}
+.nav-sep{width:36px;height:1px;background:var(--b0);margin:5px 0;flex-shrink:0;}
 
 .ni{
-  width:40px;height:40px;border-radius:10px;border:none;background:transparent;
+  width:52px;height:50px;border-radius:10px;border:none;background:transparent;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--t3);transition:all .15s;position:relative;
-  flex-shrink:0;
+  gap:4px;cursor:pointer;color:var(--t3);transition:all .15s;position:relative;
+  flex-shrink:0;padding:6px 4px;
 }
-.ni svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.ni svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.ni-label{font-size:9px;letter-spacing:.01em;line-height:1;text-align:center;font-family:var(--sans);white-space:nowrap;}
 .ni:hover{background:var(--lift);color:var(--t2);}
 .ni.active{background:var(--a-glow);color:var(--accent);}
 .ni.active svg{stroke:var(--accent);}
-
-/* Tooltip */
-.ni::after{
-  content:attr(data-tip);
-  position:absolute;left:calc(100% + 12px);
-  background:var(--lift);border:1px solid var(--b1);
-  color:var(--text);font-family:var(--sans);font-size:11px;
-  padding:4px 9px;border-radius:6px;white-space:nowrap;
-  pointer-events:none;opacity:0;transition:opacity .15s;z-index:300;
-}
-.ni:hover::after{opacity:1;}
 
 /* ── MAIN CONTENT ── */
 .app-main{overflow:hidden;display:grid;}
@@ -390,11 +380,51 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
   cursor: not-allowed;
 }
 
-@media (max-width: 900px) {
-  main { grid-template-columns: 1fr; }
-  .app-nav { display: none; }
-  .chat-wrap { grid-template-columns: 1fr; }
-  .sidebar, .right-panel { display: none; }
+/* ── 手機：底部 Tab 導覽 ── */
+@media (max-width: 768px) {
+  html, body { overflow: hidden; }
+  body { grid-template-rows: 48px 1fr 58px; }
+  .app-body { grid-template-columns: 1fr; }
+
+  .app-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 58px;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 2px;
+    border-top: 1px solid var(--b0);
+    border-right: none;
+    z-index: 500;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .app-nav::-webkit-scrollbar { display: none; }
+  .nav-sep { display: none; }
+  .ni { width: auto; min-width: 40px; height: 54px; flex: 1; border-radius: 8px; padding: 4px 2px; }
+  .ni-label { font-size: 8px; }
+  .chat-wrap { grid-template-columns: 1fr !important; }
+  .sidebar, .right-panel { display: none !important; }
+  .ticker-bar { display: none; }
+  .hdr-r .vdiv { display: none; }
+  .sec-body { padding: 14px 16px; }
+  .sec-header { padding: 16px 16px 0; }
+  .dash-grid { grid-template-columns: 1fr 1fr; }
+  .charts-row { grid-template-columns: 1fr; }
+  .holdings-row { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr; }
+  .tmpl-grid { grid-template-columns: 1fr; }
+  .messages { padding: 16px; }
+  .input-zone { padding: 10px 12px 12px; }
+}
+
+/* ── 桌機 ── */
+@media (min-width: 769px) {
+  .app-body { grid-template-columns: 58px 1fr; }
 }
 </style>
 </head>
@@ -420,38 +450,48 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 
   <!-- LEFT NAV -->
   <nav class="app-nav">
-    <button class="ni active" data-section="chat" data-tip="AI 對話理專">
+    <button class="ni active" data-section="chat">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="ni-label">對話</span>
     </button>
-    <button class="ni" data-section="templates" data-tip="提問範本庫">
+    <button class="ni" data-section="templates">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="ni-label">範本</span>
     </button>
-    <button class="ni" data-section="dashboard" data-tip="AI 投資儀表板">
+    <button class="ni" data-section="dashboard">
       <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="ni-label">儀表板</span>
     </button>
     <div class="nav-sep"></div>
-    <button class="ni" data-section="valuation" data-tip="AI 估值模組">
+    <button class="ni" data-section="valuation">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      <span class="ni-label">估值</span>
     </button>
-    <button class="ni" data-section="technical" data-tip="技術指標分析">
+    <button class="ni" data-section="technical">
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="ni-label">技術分析</span>
     </button>
-    <button class="ni" data-section="backtest" data-tip="回測分析模組">
+    <button class="ni" data-section="backtest">
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+      <span class="ni-label">回測</span>
     </button>
-    <button class="ni" data-section="allocation" data-tip="投資組合配置">
+    <button class="ni" data-section="allocation">
       <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+      <span class="ni-label">組合配置</span>
     </button>
     <div class="nav-sep"></div>
-    <button class="ni" data-section="report" data-tip="自動化投資報告">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <button class="ni" data-section="report">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="ni-label">報告</span>
     </button>
-    <button class="ni" data-section="monthly" data-tip="每月重點摘要">
+    <button class="ni" data-section="monthly">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="ni-label">月摘要</span>
     </button>
     <div class="nav-sep"></div>
-    <button class="ni" data-section="guide" data-tip="使用說明 & 程式範例">
+    <button class="ni" data-section="guide">
       <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span class="ni-label">說明</span>
     </button>
   </nav>
 
@@ -490,26 +530,10 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
             </button>
           </div>
           <div class="watchlist">
-            <div class="sb-lbl">自選股</div>
-            <div class="watch-item" onclick="sendQuick('請分析台積電（2330）的投資價值與目標價')">
-              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2330</div><div class="w-name">台積電</div></div></div>
-              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
-            </div>
-            <div class="watch-item" onclick="sendQuick('請分析聯發科（2454）的投資價值')">
-              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2454</div><div class="w-name">聯發科</div></div></div>
-              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
-            </div>
-            <div class="watch-item" onclick="sendQuick('請分析鴻海（2317）的投資前景')">
-              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2317</div><div class="w-name">鴻海</div></div></div>
-              <div class="w-right"><div class="w-price">—</div><div class="w-chg dn">—</div></div>
-            </div>
-            <div class="watch-item" onclick="sendQuick('請分析緯創（3231）的AI伺服器前景')">
-              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">3231</div><div class="w-name">緯創</div></div></div>
-              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
-            </div>
-            <div class="watch-item" onclick="sendQuick('請分析中華電（2412）的殖利率與存股價值')">
-              <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">2412</div><div class="w-name">中華電</div></div></div>
-              <div class="w-right"><div class="w-price">—</div><div class="w-chg up">—</div></div>
+            <div class="sb-lbl">自選股 <span id="wlLastUpdate" style="font-size:9px;color:var(--t3);margin-left:4px;"></span></div>
+            <div id="watchlistItems">
+              <!-- populated by JS -->
+              <div style="padding:20px 0;text-align:center;color:var(--t3);font-size:11px;">載入中...</div>
             </div>
           </div>
         </aside>
@@ -571,10 +595,10 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
           </div>
           <div class="rp-sec">
             <div class="rp-lbl">市場情緒指標</div>
-            <div class="ind-row"><div class="ind-left"><div class="ind-name">台股成交量</div><div class="ind-track"><div class="ind-fill" style="width:72%;background:var(--green)"></div></div></div><div class="ind-val up">偏高</div></div>
-            <div class="ind-row"><div class="ind-left"><div class="ind-name">外資動向</div><div class="ind-track"><div class="ind-fill" style="width:60%;background:var(--green)"></div></div></div><div class="ind-val up">買超</div></div>
-            <div class="ind-row"><div class="ind-left"><div class="ind-name">融資餘額</div><div class="ind-track"><div class="ind-fill" style="width:45%;background:var(--amber)"></div></div></div><div class="ind-val" style="color:var(--amber)">中性</div></div>
-            <div class="ind-row"><div class="ind-left"><div class="ind-name">恐慌指數 VIX</div><div class="ind-track"><div class="ind-fill" style="width:28%;background:var(--green)"></div></div></div><div class="ind-val up">低位</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">台股成交量</div><div class="ind-track"><div class="ind-fill" id="barVol" style="width:50%;background:var(--t3)"></div></div></div><div class="ind-val" id="lblVol" style="color:var(--t3)">—</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">外資動向</div><div class="ind-track"><div class="ind-fill" id="barFII" style="width:50%;background:var(--t3)"></div></div></div><div class="ind-val" id="lblFII" style="color:var(--t3)">—</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">今日大盤</div><div class="ind-track"><div class="ind-fill" id="barIdx" style="width:50%;background:var(--t3)"></div></div></div><div class="ind-val" id="lblIdx" style="color:var(--t3)">—</div></div>
+            <div class="ind-row"><div class="ind-left"><div class="ind-name">VIX 恐慌指數</div><div class="ind-track"><div class="ind-fill" id="barVIX" style="width:50%;background:var(--t3)"></div></div></div><div class="ind-val" id="lblVIX" style="color:var(--t3)">—</div></div>
           </div>
           <div class="rp-sec">
             <div class="rp-lbl">使用說明</div>
@@ -611,10 +635,10 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
       </div>
       <div class="sec-body">
         <div class="dash-grid">
-          <div class="kpi-card"><div class="kpi-label">投資組合總值</div><div class="kpi-val">NT$ 1,250,800</div><div class="kpi-chg up">▲ +12.8% 今年以來</div></div>
-          <div class="kpi-card"><div class="kpi-label">未實現損益</div><div class="kpi-val up">+142,300</div><div class="kpi-chg up">▲ +12.82%</div></div>
-          <div class="kpi-card"><div class="kpi-label">本月報酬率</div><div class="kpi-val up">+3.24%</div><div class="kpi-chg" style="color:var(--t2)">大盤本月 +2.1%</div></div>
-          <div class="kpi-card"><div class="kpi-label">持股檔數</div><div class="kpi-val">8</div><div class="kpi-chg" style="color:var(--t2)">跨 5 個產業</div></div>
+          <div class="kpi-card"><div class="kpi-label">台積電 2330</div><div class="kpi-val" id="kpi2330">—</div><div class="kpi-chg" id="kpiChg2330">載入中...</div></div>
+          <div class="kpi-card"><div class="kpi-label">聯發科 2454</div><div class="kpi-val" id="kpi2454">—</div><div class="kpi-chg" id="kpiChg2454">載入中...</div></div>
+          <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII">—</div><div class="kpi-chg" id="kpiChgTWII">載入中...</div></div>
+          <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP">—</div><div class="kpi-chg" id="kpiChgSP">載入中...</div></div>
         </div>
         <div class="charts-row">
           <div class="chart-card">
@@ -631,11 +655,10 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
         </div>
         <div class="holdings-row">
           <div class="holdings-card">
-            <div class="chart-card-title"><span>持股明細</span></div>
-            <div class="holding-item"><div><div class="holding-sym">2330 台積電</div><div class="holding-name">半導體</div></div><div class="holding-val"><div class="holding-price">NT$900</div><div class="holding-pnl up">+28.4%</div></div></div>
-            <div class="holding-item"><div><div class="holding-sym">2454 聯發科</div><div class="holding-name">IC設計</div></div><div class="holding-val"><div class="holding-price">NT$1,280</div><div class="holding-pnl up">+15.2%</div></div></div>
-            <div class="holding-item"><div><div class="holding-sym">0050 元大台灣50</div><div class="holding-name">ETF</div></div><div class="holding-val"><div class="holding-price">NT$198</div><div class="holding-pnl up">+8.7%</div></div></div>
-            <div class="holding-item"><div><div class="holding-sym">2317 鴻海</div><div class="holding-name">電子製造</div></div><div class="holding-val"><div class="holding-price">NT$155</div><div class="holding-pnl dn">-2.1%</div></div></div>
+            <div class="chart-card-title"><span>即時股價</span><span id="holdLastUpdate" style="font-size:10px;color:var(--t3)"></span></div>
+            <div id="holdingsTable">
+              <div style="padding:20px 0;text-align:center;color:var(--t3);font-size:12px;">載入即時資料中...</div>
+            </div>
           </div>
           <div class="holdings-card">
             <div class="chart-card-title"><span>月績效趨勢</span></div>
@@ -1024,22 +1047,145 @@ function setModel(provider) {
 initModels();
 
 /* ═══════════════════════════
-   TICKER
+   REAL DATA — TICKER
 ═══════════════════════════ */
-const ticks=[
-  {sym:'台積電',val:'900.00',chg:'+1.50%',up:true},{sym:'聯發科',val:'1,280',chg:'+2.10%',up:true},
-  {sym:'鴻海',val:'155.5',chg:'-0.32%',up:false},{sym:'台指期',val:'22,450',chg:'+0.80%',up:true},
-  {sym:'S&P500',val:'5,623',chg:'+0.41%',up:true},{sym:'NASDAQ',val:'17,890',chg:'+0.63%',up:true},
-  {sym:'道瓊',val:'41,200',chg:'-0.12%',up:false},{sym:'USD/TWD',val:'31.85',chg:'-0.20%',up:false},
-  {sym:'黃金',val:'3,020',chg:'+0.91%',up:true},{sym:'WTI',val:'72.4',chg:'-0.54%',up:false},
-];
-document.getElementById('tickerTrack').innerHTML=[...ticks,...ticks].map(t=>
-  `<div class="tick"><span class="tick-sym">${t.sym}</span><span class="tick-val">${t.val}</span><span class="${t.up?'tick-up':'tick-dn'}">${t.up?'▲':'▼'} ${t.chg}</span></div>`
-).join('');
+async function loadTicker() {
+  try {
+    const data = await fetch('/api/ticker').then(r => r.json());
+    if (!Array.isArray(data)) return;
+    const doubled = [...data, ...data];
+    document.getElementById('tickerTrack').innerHTML = doubled.map(t => {
+      const sign = t.up ? '▲' : '▼';
+      const cls  = t.up ? 'tick-up' : 'tick-dn';
+      const pct  = t.change != null ? Math.abs(t.change).toFixed(2) + '%' : '—';
+      const price = t.price != null
+        ? (t.price >= 1000 ? t.price.toLocaleString('zh-TW', {maximumFractionDigits:0}) : t.price.toFixed(2))
+        : '—';
+      return `<div class="tick"><span class="tick-sym">${t.sym}</span><span class="tick-val">${price}</span><span class="${cls}">${sign} ${pct}</span></div>`;
+    }).join('');
+  } catch (e) { console.warn('ticker load failed', e.message); }
+}
+loadTicker();
+setInterval(loadTicker, 60_000); // refresh every 60s
 
 /* ═══════════════════════════
-   CLOCK
+   REAL DATA — WATCHLIST
 ═══════════════════════════ */
+async function loadWatchlist() {
+  try {
+    const data = await fetch('/api/watchlist').then(r => r.json());
+    if (!Array.isArray(data)) return;
+
+    document.getElementById('watchlistItems').innerHTML = data.map(s => {
+      const price = s.price != null
+        ? (s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1))
+        : '—';
+      const pct   = s.change != null ? (s.up ? '+' : '') + s.change.toFixed(2) + '%' : '—';
+      const cls   = s.up ? 'up' : 'dn';
+      const prompt = `請根據最新資料分析${s.name}（${s.code}）的投資價值，包含技術面與基本面`;
+      return `<div class="watch-item" onclick="sendQuick('${prompt}')">
+        <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">${s.code}</div><div class="w-name">${s.name}</div></div></div>
+        <div class="w-right"><div class="w-price">${price}</div><div class="w-chg ${cls}">${pct}</div></div>
+      </div>`;
+    }).join('');
+
+    const now = new Date();
+    document.getElementById('wlLastUpdate').textContent = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+
+    // Also update dashboard KPIs if they exist
+    const map = { '^TWII': 'kpiTWII', '^GSPC': 'kpiSP' };
+    // We need to find 2330 and 2454 from watchlist
+    data.forEach(s => {
+      const idVal = { '2330.TW':'kpi2330','2454.TW':'kpi2454' }[s.sym];
+      const idChg = { '2330.TW':'kpiChg2330','2454.TW':'kpiChg2454' }[s.sym];
+      if (idVal) {
+        const el = document.getElementById(idVal);
+        const ec = document.getElementById(idChg);
+        if (el) { el.textContent = 'NT$' + (s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1)); el.className = 'kpi-val ' + (s.up?'up':'dn'); }
+        if (ec) { ec.textContent = (s.up?'▲':'▼') + ' ' + Math.abs(s.change).toFixed(2) + '%'; ec.className = 'kpi-chg ' + (s.up?'up':'dn'); }
+      }
+    });
+  } catch (e) { console.warn('watchlist load failed', e.message); }
+}
+loadWatchlist();
+setInterval(loadWatchlist, 60_000);
+
+/* ═══════════════════════════
+   REAL DATA — MARKET INDICATORS
+═══════════════════════════ */
+async function loadMarketIndicators() {
+  // VIX from Yahoo Finance
+  try {
+    const [twseData, tickerData] = await Promise.allSettled([
+      fetch('/api/twse/market').then(r=>r.json()),
+      fetch('/api/ticker').then(r=>r.json()),
+    ]);
+
+    // TWSE data
+    if (twseData.status === 'fulfilled') {
+      const d = twseData.value;
+      // FII (外資)
+      if (d.fii) {
+        const net = d.fii.net;
+        const abs = Math.abs(net);
+        const pct = Math.min(abs / 200000 * 100, 100); // scale to 200億=100%
+        const up  = net >= 0;
+        document.getElementById('barFII').style.cssText = `width:${Math.max(pct,8)}%;background:${up?'var(--green)':'var(--red)'}`;
+        document.getElementById('lblFII').textContent = net >= 0 ? `+${(net/1e8).toFixed(0)}億` : `${(net/1e8).toFixed(0)}億`;
+        document.getElementById('lblFII').className = 'ind-val ' + (up?'up':'dn');
+      }
+    }
+
+    // Ticker data for TWII and VIX
+    if (tickerData.status === 'fulfilled' && Array.isArray(tickerData.value)) {
+      const arr = tickerData.value;
+      const twii = arr.find(t => t.ticker==='^TWII');
+      const vix  = arr.find(t => t.ticker==='^VIX') || arr.find(t => t.sym==='VIX');
+
+      if (twii) {
+        const up   = twii.up;
+        const pct  = Math.min(50 + twii.change * 5, 100);
+        document.getElementById('barIdx').style.cssText  = `width:${Math.max(pct,8)}%;background:${up?'var(--green)':'var(--red)'}`;
+        document.getElementById('lblIdx').textContent     = (up?'▲':'▼') + Math.abs(twii.change).toFixed(2) + '%';
+        document.getElementById('lblIdx').className       = 'ind-val ' + (up?'up':'dn');
+        // Update dashboard TWII KPI
+        const kEl = document.getElementById('kpiTWII');
+        const cEl = document.getElementById('kpiChgTWII');
+        if (kEl) { kEl.textContent = twii.price.toLocaleString('zh-TW',{maximumFractionDigits:0}); kEl.className='kpi-val '+(up?'up':'dn'); }
+        if (cEl) { cEl.textContent = (up?'▲':'▼')+Math.abs(twii.change).toFixed(2)+'%'; cEl.className='kpi-chg '+(up?'up':'dn'); }
+      }
+
+      if (vix) {
+        const vixVal = vix.price;
+        const vixPct = Math.min((vixVal / 50) * 100, 100);
+        const vixColor = vixVal < 15 ? 'var(--green)' : vixVal < 25 ? 'var(--amber)' : 'var(--red)';
+        const vixLbl   = vixVal < 15 ? '低位' : vixVal < 25 ? '中位' : '高位';
+        document.getElementById('barVIX').style.cssText = `width:${vixPct}%;background:${vixColor}`;
+        document.getElementById('lblVIX').textContent   = vixVal.toFixed(1);
+        document.getElementById('lblVIX').style.color   = vixColor;
+      }
+
+      // Volume proxy: use TWII volume or estimate
+      if (twii && twii.price) {
+        const volUp = twii.up;
+        document.getElementById('barVol').style.cssText = `width:65%;background:${volUp?'var(--green)':'var(--amber)'}`;
+        document.getElementById('lblVol').textContent   = volUp ? '偏高' : '偏低';
+        document.getElementById('lblVol').className     = 'ind-val ' + (volUp?'up':'');
+      }
+
+      // S&P500 KPI
+      const sp = arr.find(t => t.ticker==='^GSPC');
+      if (sp) {
+        const kEl = document.getElementById('kpiSP');
+        const cEl = document.getElementById('kpiChgSP');
+        if (kEl) { kEl.textContent = sp.price.toLocaleString('zh-TW',{maximumFractionDigits:0}); kEl.className='kpi-val '+(sp.up?'up':'dn'); }
+        if (cEl) { cEl.textContent = (sp.up?'▲':'▼')+Math.abs(sp.change).toFixed(2)+'%'; cEl.className='kpi-chg '+(sp.up?'up':'dn'); }
+      }
+    }
+  } catch (e) { console.warn('indicators load failed', e.message); }
+}
+loadMarketIndicators();
+setInterval(loadMarketIndicators, 120_000); // every 2 min
 function clock(){const n=new Date();document.getElementById('hdrTime').textContent=n.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+'  '+n.toLocaleTimeString('zh-TW',{hour12:false});}
 clock();setInterval(clock,1000);
 
@@ -1210,29 +1356,95 @@ function useTemplate(idx){
 function copyTemplate(idx){navigator.clipboard.writeText(templates[idx].prompt);}
 
 /* ═══════════════════════════
-   CHARTS (DASHBOARD)
+   REAL CHARTS (DASHBOARD)
 ═══════════════════════════ */
-let chartsInited=false;
-function initCharts(){
-  if(chartsInited)return;chartsInited=true;
+let chartsInited = false;
+let chartInstances = {};
 
-  const chartDefaults={color:'rgba(232,237,245,0.7)',borderColor:'rgba(232,237,245,0.08)',gridColor:'rgba(232,237,245,0.05)'};
+async function initCharts() {
+  if (chartsInited) return;
+  chartsInited = true;
 
-  /* Portfolio line chart */
-  const ctx1=document.getElementById('portfolioChart').getContext('2d');
-  const labels=['9月','10月','11月','12月','1月','2月','3月'];
-  const vals=[1108500,1138200,1095300,1201400,1175800,1218900,1250800];
-  const grad=ctx1.createLinearGradient(0,0,0,200);
-  grad.addColorStop(0,'rgba(61,130,246,0.3)');grad.addColorStop(1,'rgba(61,130,246,0.01)');
-  new Chart(ctx1,{type:'line',data:{labels,datasets:[{data:vals,borderColor:'#3d82f6',backgroundColor:grad,borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#3d82f6'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:chartDefaults.gridColor},ticks:{color:'#8897ae',font:{size:10}}},y:{grid:{color:chartDefaults.gridColor},ticks:{color:'#8897ae',font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'}}}}});
+  const gridColor = 'rgba(232,237,245,0.05)';
+  const tickColor = '#8897ae';
+  const baseOpts  = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } };
 
-  /* Allocation donut */
-  const ctx2=document.getElementById('allocationChart').getContext('2d');
-  new Chart(ctx2,{type:'doughnut',data:{labels:['半導體','IC設計','ETF','電子製造','金融','其他'],datasets:[{data:[35,20,18,12,10,5],backgroundColor:['#3d82f6','#22c55e','#a78bfa','#f59e0b','#38bdf8','#64748b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8897ae',font:{size:10},boxWidth:10,padding:8}}},cutout:'65%'}});
+  // ── 1. 台積電 6mo line chart ───────────────
+  try {
+    const hist = await fetch('/api/chart/2330.TW?period=6mo&interval=1d').then(r=>r.json());
+    if (Array.isArray(hist) && hist.length) {
+      const labels = hist.map(h => h.date.slice(5)); // MM-DD
+      const vals   = hist.map(h => h.close);
+      const grad   = document.getElementById('portfolioChart').getContext('2d').createLinearGradient(0,0,0,200);
+      grad.addColorStop(0,'rgba(61,130,246,0.35)');
+      grad.addColorStop(1,'rgba(61,130,246,0.01)');
+      chartInstances.portfolio = new Chart(document.getElementById('portfolioChart'), {
+        type: 'line',
+        data: { labels, datasets: [{ data: vals, borderColor:'#3d82f6', backgroundColor:grad, borderWidth:2, fill:true, tension:0.35, pointRadius:0, pointHoverRadius:4 }] },
+        options: { ...baseOpts, scales: {
+          x: { grid:{ color:gridColor }, ticks:{ color:tickColor, font:{size:10}, maxTicksLimit:8 } },
+          y: { grid:{ color:gridColor }, ticks:{ color:tickColor, font:{size:10}, callback:v=>v.toLocaleString() } }
+        }},
+      });
 
-  /* Monthly performance bar */
-  const ctx3=document.getElementById('perfChart').getContext('2d');
-  new Chart(ctx3,{type:'bar',data:{labels:['10月','11月','12月','1月','2月','3月'],datasets:[{data:[2.8,-3.5,8.7,-2.1,3.6,3.24],backgroundColor:d=>d.raw>=0?'rgba(34,197,94,0.7)':'rgba(239,68,68,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8897ae',font:{size:10}}},y:{grid:{color:'rgba(232,237,245,0.05)'},ticks:{color:'#8897ae',font:{size:10},callback:v=>v+'%'}}}}});
+      // Update chart title with real info
+      const last   = vals[vals.length-1];
+      const first  = vals[0];
+      const chg    = ((last-first)/first*100).toFixed(2);
+      const el     = document.querySelector('.charts-row .chart-card .chart-card-title');
+      if (el) el.innerHTML = `<span>台積電 6 個月走勢</span><span style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'▲':'▼'} ${Math.abs(chg)}%</span>`;
+    }
+  } catch (e) { console.warn('portfolio chart failed', e.message); }
+
+  // ── 2. Allocation donut from watchlist ─────
+  try {
+    const wl = await fetch('/api/watchlist').then(r=>r.json());
+    if (Array.isArray(wl)) {
+      const sectors = {};
+      wl.forEach(s => { sectors[s.sector] = (sectors[s.sector]||0) + (s.price||0); });
+      const labels = Object.keys(sectors);
+      const values = Object.values(sectors);
+      chartInstances.alloc = new Chart(document.getElementById('allocationChart'), {
+        type: 'doughnut',
+        data: { labels, datasets:[{ data:values, backgroundColor:['#3d82f6','#22c55e','#a78bfa','#f59e0b','#38bdf8','#64748b'], borderWidth:0 }] },
+        options: { ...baseOpts, plugins:{ legend:{ position:'bottom', labels:{ color:tickColor, font:{size:10}, boxWidth:10, padding:8 } } }, cutout:'65%' },
+      });
+    }
+  } catch {}
+
+  // ── 3. Holdings real-time table ────────────
+  try {
+    const wl = await fetch('/api/watchlist').then(r=>r.json());
+    if (Array.isArray(wl)) {
+      document.getElementById('holdingsTable').innerHTML = wl.map(s => {
+        const price = s.price != null ? (s.price>=1000?s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}):s.price.toFixed(1)) : '—';
+        const pct   = s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
+        return `<div class="holding-item">
+          <div><div class="holding-sym">${s.code} ${s.name}</div><div class="holding-name">${s.sector}${s.pe?' ｜ P/E '+s.pe.toFixed(1):''}</div></div>
+          <div class="holding-val"><div class="holding-price">NT$${price}</div><div class="holding-pnl ${s.up?'up':'dn'}">${pct}</div></div>
+        </div>`;
+      }).join('');
+      const now = new Date();
+      document.getElementById('holdLastUpdate').textContent = '更新 '+now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    }
+  } catch {}
+
+  // ── 4. Monthly performance bar (TWII monthly) ─
+  try {
+    const hist = await fetch('/api/chart/%5ETWII?period=6mo&interval=1mo').then(r=>r.json());
+    if (Array.isArray(hist) && hist.length) {
+      const labels = hist.map(h => h.date.slice(0,7));
+      const vals   = hist.map(h => h.close && hist[0].close ? ((h.close-hist[0].close)/hist[0].close*100) : 0);
+      chartInstances.perf = new Chart(document.getElementById('perfChart'), {
+        type: 'bar',
+        data: { labels, datasets:[{ data:vals, backgroundColor:vals.map(v=>v>=0?'rgba(34,197,94,0.7)':'rgba(239,68,68,0.7)'), borderRadius:4 }] },
+        options: { ...baseOpts, scales: {
+          x: { grid:{display:false}, ticks:{color:tickColor,font:{size:10}} },
+          y: { grid:{color:gridColor}, ticks:{color:tickColor,font:{size:10},callback:v=>v.toFixed(1)+'%'} }
+        }},
+      });
+    }
+  } catch (e) { console.warn('perf chart failed', e.message); }
 }
 
 /* ═══════════════════════════
