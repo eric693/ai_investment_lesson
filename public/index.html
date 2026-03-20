@@ -427,6 +427,55 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
   .app-body { grid-template-columns: 58px 1fr; }
 }
 
+/* ── Analyst System ── */
+.analyst-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.analyst-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--b0);background:var(--panel);font-size:12px;color:var(--t2);cursor:pointer;transition:all .12s;}
+.analyst-tab.active,.analyst-tab:hover{border-color:var(--a-dim);color:var(--accent);background:var(--a-glow);}
+.analyst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:16px;}
+.analyst-card{background:var(--surface);border:1px solid var(--b0);border-radius:12px;overflow:hidden;}
+.analyst-card-head{padding:12px 14px;background:var(--lift);border-bottom:1px solid var(--b0);display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+.analyst-card-head svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.analyst-role{font-size:12.5px;font-weight:600;color:var(--text);}
+.analyst-badge{margin-left:auto;font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;letter-spacing:.06em;}
+.badge-bull{background:rgba(34,197,94,.15);color:var(--green);}
+.badge-bear{background:rgba(239,68,68,.15);color:var(--red);}
+.badge-neutral{background:rgba(61,130,246,.15);color:var(--accent);}
+.analyst-body{padding:14px;font-size:12.5px;line-height:1.75;color:var(--text);max-height:320px;overflow-y:auto;display:none;scrollbar-width:thin;}
+.analyst-body.open{display:block;}
+.final-verdict{background:linear-gradient(135deg,#0f1e40,#111827);border:1px solid var(--b1);border-radius:14px;padding:22px;margin-bottom:16px;}
+.final-verdict-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.final-verdict-title svg{width:16px;height:16px;stroke:var(--amber);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.debate-round{background:var(--surface);border:1px solid var(--b0);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.debate-round-head{padding:10px 14px;background:var(--lift);font-size:11px;font-weight:600;color:var(--t2);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;}
+.debate-side{padding:12px 14px;font-size:12.5px;line-height:1.7;border-bottom:1px solid var(--b0);}
+.debate-side:last-child{border:none;}
+.debate-side-label{font-size:10px;font-weight:600;margin-bottom:6px;font-family:var(--mono);letter-spacing:.08em;}
+.debate-bull .debate-side-label{color:var(--green);}
+.debate-bear .debate-side-label{color:var(--red);}
+/* ── News & Sentiment ── */
+.news-grid-layout{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px;}
+.news-item{padding:11px 0;border-bottom:1px solid var(--b0);display:flex;gap:10px;align-items:flex-start;}
+.news-item:last-child{border:none;}
+.news-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.news-title-link{font-size:13px;color:var(--text);line-height:1.5;cursor:pointer;text-decoration:none;display:block;}
+.news-title-link:hover{color:var(--accent);}
+.news-meta{font-size:10px;color:var(--t3);margin-top:3px;font-family:var(--mono);}
+.sentiment-gauge{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:18px;text-align:center;}
+.gauge-val{font-family:var(--mono);font-size:36px;font-weight:700;line-height:1;}
+.gauge-lbl{font-size:11px;color:var(--t2);margin-top:6px;}
+.gauge-bar-outer{height:6px;border-radius:3px;background:var(--panel);margin:12px 0;overflow:hidden;position:relative;}
+.gauge-bar-inner{height:100%;border-radius:3px;position:absolute;transition:width .5s ease;}
+/* ── Kelly ── */
+.kelly-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px;}
+.kelly-card{background:var(--surface);border:1px solid var(--b0);border-radius:10px;padding:14px;text-align:center;}
+.kelly-card-val{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1;margin-bottom:4px;}
+.kelly-card-lbl{font-size:10px;color:var(--t2);}
+.kelly-bar-wrap{margin:14px 0;}
+.kelly-bar-outer{height:8px;background:var(--panel);border-radius:4px;overflow:hidden;position:relative;}
+.kelly-bar-inner{height:100%;border-radius:4px;background:linear-gradient(to right,var(--green),var(--amber));transition:width .5s;}
+.ev-pos{color:var(--green);}
+.ev-neg{color:var(--red);}
+
 /* ── Metric Cards (backtest + macro) ── */
 .metrics-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
 .metric-card{background:var(--surface);border:1px solid var(--b0);border-radius:10px;padding:14px 12px;text-align:center;}
@@ -517,6 +566,19 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
     <button class="ni" data-section="guide">
       <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       <span class="ni-label">說明</span>
+    </button>
+    <div class="nav-sep"></div>
+    <button class="ni" data-section="analysts">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="ni-label">分析師</span>
+    </button>
+    <button class="ni" data-section="newssentiment">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <span class="ni-label">新聞情緒</span>
+    </button>
+    <button class="ni" data-section="kelly">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span class="ni-label">凱利公式</span>
     </button>
     <div class="nav-sep"></div>
     <button class="ni" data-section="macro">
@@ -1030,6 +1092,142 @@ signal <span class="op">=</span> (df[<span class="str">'K'</span>] <span class="
       </div>
     </div>
 
+
+    <!-- ══ 11. 7 ANALYST SYSTEM ══ -->
+    <div class="sec" id="sec-analysts">
+      <div class="sec-header">
+        <div class="sec-title">7 位 AI 分析師系統</div>
+        <div class="sec-sub">基本面、技術面、新聞、情緒、長線、交易員 6 位並行分析，最終決策者綜合輸出，並支援多空辯論</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>分析設定</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">股票代號</label><input class="form-input" id="an-symbol" placeholder="例：2330"></div>
+            <div class="form-group"><label class="form-label">分析模式</label>
+              <select class="form-select" id="an-mode">
+                <option value="report">完整 7 位分析師報告</option>
+                <option value="debate">多空辯論（3 輪）</option>
+                <option value="both">報告 + 辯論（最完整）</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--panel);border-radius:8px;padding:10px;line-height:1.7;">
+            <strong style="color:var(--amber)">預計時間：</strong>完整報告約 30-60 秒（6位並行 + 1位決策），加辯論約再需 20-30 秒。
+            系統自動從 Yahoo Finance 抓取即時財務數據與近期新聞供分析師使用。
+          </div>
+          <button class="submit-btn" id="anBtn" onclick="runAnalysts()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>啟動分析師團隊
+          </button>
+        </div>
+        <div id="anStockInfo" style="display:none;background:var(--lift);border:1px solid var(--b1);border-radius:10px;padding:12px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:var(--t2);"></div>
+        <div id="anFinalArea" style="display:none;margin-bottom:16px;">
+          <div class="final-verdict">
+            <div class="final-verdict-title">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              最終投資決策
+            </div>
+            <div id="anFinalContent" style="font-size:13px;line-height:1.8;white-space:pre-wrap;"></div>
+          </div>
+          <button class="copy-btn" onclick="copyResult('anFinalContent')">複製最終決策</button>
+        </div>
+        <div id="anAnalystsArea" style="display:none;margin-bottom:16px;">
+          <div class="analyst-tabs" id="analystTabBar"></div>
+          <div class="analyst-grid" id="analystGrid"></div>
+        </div>
+        <div id="anDebateArea" style="display:none;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--b0);">多空辯論記錄</div>
+          <div id="debateRounds"></div>
+          <div id="debateVerdict" style="margin-top:14px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 12. NEWS & SENTIMENT ══ -->
+    <div class="sec" id="sec-newssentiment">
+      <div class="sec-header">
+        <div class="sec-title">新聞情緒分析</div>
+        <div class="sec-sub">整合 Google News RSS + Yahoo Finance 新聞 + PTT Stock 版討論，AI 分析市場情緒偏向</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>輸入分析標的</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">股票代號</label><input class="form-input" id="ns-symbol" placeholder="例：2330"></div>
+            <div class="form-group"><label class="form-label">股票名稱（搜尋關鍵字）</label><input class="form-input" id="ns-name" placeholder="例：台積電"></div>
+          </div>
+          <button class="submit-btn" id="nsBtn" onclick="runNewsSentiment()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>抓取新聞並分析情緒
+          </button>
+        </div>
+        <div id="nsDataArea" style="display:none;">
+          <div class="news-grid-layout">
+            <div>
+              <div class="rp-lbl" style="margin-bottom:10px;">最新新聞（<span id="newsCount">0</span> 則）</div>
+              <div id="newsList"></div>
+            </div>
+            <div>
+              <div class="rp-lbl" style="margin-bottom:10px;">情緒概覽</div>
+              <div class="sentiment-gauge">
+                <div class="gauge-val" id="gaugeScore">—</div>
+                <div class="gauge-lbl" id="gaugeLabel">等待分析...</div>
+                <div class="gauge-bar-outer"><div class="gauge-bar-inner" id="gaugeFill" style="width:50%;background:var(--t3);"></div></div>
+                <div style="font-size:10px;color:var(--t3);display:flex;justify-content:space-between;font-family:var(--mono);"><span>-5 悲觀</span><span>0</span><span>+5 樂觀</span></div>
+              </div>
+              <div style="margin-top:12px;">
+                <div class="rp-lbl">PTT Stock 版</div>
+                <div id="pttList" style="font-size:12px;color:var(--t2);line-height:1.7;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="result-box" id="nsAiResult" style="display:none;">
+            <div class="result-box-head"><div class="result-box-title">AI 情緒分析報告</div><button class="copy-btn" onclick="copyResult('nsContent')">複製</button></div>
+            <div class="result-content" id="nsContent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 13. KELLY CRITERION ══ -->
+    <div class="sec" id="sec-kelly">
+      <div class="sec-header">
+        <div class="sec-title">凱利公式倉位管理</div>
+        <div class="sec-sub">根據交易策略的勝率與賠率，科學計算最佳倉位大小，避免過度槓桿</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>交易策略參數</div>
+          <div class="form-grid cols-3">
+            <div class="form-group"><label class="form-label">勝率 (%)</label><input class="form-input" id="kl-winrate" placeholder="例：55" type="number" value="55"></div>
+            <div class="form-group"><label class="form-label">平均獲利 (%)</label><input class="form-input" id="kl-avgwin" placeholder="例：8" type="number" value="8"></div>
+            <div class="form-group"><label class="form-label">平均虧損 (%)</label><input class="form-input" id="kl-avgloss" placeholder="例：5" type="number" value="5"></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">總資本 (NT$)</label><input class="form-input" id="kl-capital" placeholder="例：1000000" type="number" value="1000000"></div>
+            <div class="form-group"><label class="form-label">最大倉位上限 (%)</label><input class="form-input" id="kl-max" placeholder="例：30" type="number" value="30"></div>
+          </div>
+          <div style="font-size:12px;color:var(--t2);background:var(--panel);border-radius:8px;padding:10px;margin-bottom:14px;line-height:1.7;">
+            <strong style="color:var(--text)">公式：</strong>f* = (b×p − q) / b，其中 b=賠率比，p=勝率，q=1-勝率<br>
+            <strong style="color:var(--amber)">實務：</strong>建議使用「半凱利」（Full Kelly ÷ 2）以降低資金曲線波動。
+          </div>
+          <button class="submit-btn" id="klBtn" onclick="runKelly()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>計算最佳倉位
+          </button>
+        </div>
+        <div id="klResultArea" style="display:none;">
+          <div class="kelly-cards-grid" id="kellyCards"></div>
+          <div class="kelly-bar-wrap">
+            <div style="font-size:11px;color:var(--t2);margin-bottom:8px;font-family:var(--mono);">凱利分數視覺化（建議使用半凱利以下）</div>
+            <div class="kelly-bar-outer"><div class="kelly-bar-inner" id="klBar" style="width:0%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px;"><span>0%</span><span>25%</span><span>50%</span><span>100%</span></div>
+          </div>
+          <div class="result-box" id="klAiResult" style="display:none;">
+            <div class="result-box-head"><div class="result-box-title">AI 倉位管理建議</div><button class="copy-btn" onclick="copyResult('klContent')">複製</button></div>
+            <div class="result-content" id="klContent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ══ 11. MACRO ECONOMIC MODULE ══ -->
     <div class="sec" id="sec-macro">
@@ -1964,6 +2162,344 @@ document.querySelectorAll('.ni').forEach(btn => {
     }
   });
 });
+
+/* ==============================================
+   7 ANALYST SYSTEM
+============================================== */
+const ANALYST_CFG = [
+  {key:'fundamental',role:'基本面分析師',  badge:'neutral'},
+  {key:'technical',  role:'技術分析師',    badge:'neutral'},
+  {key:'news',       role:'新聞分析師',    badge:'neutral'},
+  {key:'sentiment',  role:'情緒分析師',    badge:'neutral'},
+  {key:'longterm',   role:'長線投資計劃師',badge:'bull'},
+  {key:'trader',     role:'短線交易員',    badge:'bear'},
+  {key:'final',      role:'最終決策官',    badge:'bull'},
+];
+
+async function runAnalysts() {
+  const symbol = document.getElementById('an-symbol').value.trim();
+  const mode   = document.getElementById('an-mode').value;
+  if (!symbol) { document.getElementById('an-symbol').focus(); return; }
+
+  const btn = document.getElementById('anBtn');
+  btn.disabled = true;
+  let elapsed = 0;
+  const timer = setInterval(() => {
+    btn.innerHTML = '<div class="spin"></div> 分析師工作中... ' + (++elapsed) + 's（約 30-60 秒）';
+  }, 1000);
+  btn.innerHTML = '<div class="spin"></div> 啟動中...';
+
+  document.getElementById('anFinalArea').style.display    = 'none';
+  document.getElementById('anAnalystsArea').style.display = 'none';
+  document.getElementById('anDebateArea').style.display   = 'none';
+
+  // Storage for all analyst reports
+  const reports = {};
+
+  try {
+    if (mode === 'report' || mode === 'both') {
+      // Use SSE streaming endpoint
+      const res = await fetch('/api/seven-analysts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: symbol, provider: currentProvider }),
+      });
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      // Prepare analyst tabs & cards
+      document.getElementById('analystTabBar').innerHTML = ANALYST_CFG.map(a =>
+        '<button class="analyst-tab" id="atab-' + a.key + '" onclick="toggleAnalystCard(\'' + a.key + '\',this)">' + a.role + '</button>'
+      ).join('');
+      document.getElementById('analystGrid').innerHTML = ANALYST_CFG.map(a =>
+        '<div class="analyst-card" id="acard-' + a.key + '" style="display:none;">' +
+        '<div class="analyst-card-head">' +
+        '<span class="analyst-role">' + a.role + '</span>' +
+        '<span class="analyst-badge badge-' + a.badge + '">' + a.badge + '</span>' +
+        '</div><div class="analyst-body open" id="abody-' + a.key + '">' +
+        '<div class="typing"><span></span><span></span><span></span></div>' +
+        '</div></div>'
+      ).join('');
+      document.getElementById('anAnalystsArea').style.display = 'block';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const evt = JSON.parse(line.slice(6));
+            if (evt.type === 'status') {
+              btn.innerHTML = '<div class="spin"></div> ' + evt.msg;
+            } else if (evt.type === 'analyst') {
+              reports[evt.id] = evt.report;
+              const card = document.getElementById('acard-' + evt.id);
+              const body = document.getElementById('abody-' + evt.id);
+              const tab  = document.getElementById('atab-' + evt.id);
+              if (body) body.innerHTML = fmtAnalyst(evt.report);
+              if (card) card.style.display = 'block';
+              if (tab)  tab.classList.add('active');
+              // Final decision goes to special area
+              if (evt.id === 'final') {
+                document.getElementById('anFinalContent').innerHTML = fmtAnalyst(evt.report);
+                document.getElementById('anFinalArea').style.display = 'block';
+              }
+            }
+          } catch {}
+        }
+      }
+    }
+
+    if (mode === 'debate' || mode === 'both') {
+      btn.innerHTML = '<div class="spin"></div> 多空辯論進行中...';
+      document.getElementById('debateRounds').innerHTML =
+        '<div style="color:var(--t3);font-size:12px;padding:12px 0;">辯論進行中，請稍候...</div>';
+      document.getElementById('anDebateArea').style.display = 'block';
+
+      const res2   = await fetch('/api/debate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: symbol, provider: currentProvider }),
+      });
+      const reader2  = res2.body.getReader();
+      const decoder2 = new TextDecoder();
+      const rounds   = [];
+      let   verdict  = '';
+
+      while (true) {
+        const { done, value } = await reader2.read();
+        if (done) break;
+        for (const line of decoder2.decode(value).split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const evt = JSON.parse(line.slice(6));
+            if (evt.type === 'status') {
+              btn.innerHTML = '<div class="spin"></div> ' + evt.msg;
+            } else if (evt.type === 'round') {
+              rounds.push(evt);
+              renderDebateRounds(rounds);
+            } else if (evt.type === 'verdict') {
+              verdict = evt.content;
+              document.getElementById('debateVerdict').innerHTML =
+                '<div class="final-verdict"><div class="final-verdict-title">' +
+                '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                '辯論裁決</div><div style="font-size:13px;line-height:1.8;">' + fmtAnalyst(verdict) + '</div></div>';
+            }
+          } catch {}
+        }
+      }
+    }
+  } catch (e) {
+    document.getElementById('anFinalContent').textContent = '分析失敗：' + e.message;
+    document.getElementById('anFinalArea').style.display = 'block';
+  }
+
+  clearInterval(timer);
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>啟動分析師團隊';
+}
+
+function fmtAnalyst(t) {
+  if (!t) return '';
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+}
+function toggleAnalystBody(id) { const el=document.getElementById(id); if(el) el.classList.toggle('open'); }
+function toggleAnalystCard(key, btn) {
+  const card = document.getElementById('acard-' + key);
+  if (!card) return;
+  const shown = card.style.display !== 'none';
+  card.style.display = shown ? 'none' : 'block';
+  if (btn) btn.classList.toggle('active', !shown);
+}
+function renderDebateRounds(rounds) {
+  // Group into rounds
+  const r1 = rounds.filter(r => r.round === 1);
+  const r2 = rounds.filter(r => r.round === 2);
+  let html = '';
+  if (r1.length) {
+    html += '<div class="debate-round"><div class="debate-round-head">第一輪</div>';
+    r1.forEach(r => {
+      html += '<div class="debate-side ' + (r.side==='bull'?'debate-bull':'debate-bear') + '">' +
+              '<div class="debate-side-label">' + r.label + '</div>' + fmtAnalyst(r.content) + '</div>';
+    });
+    html += '</div>';
+  }
+  if (r2.length) {
+    html += '<div class="debate-round"><div class="debate-round-head">第二輪</div>';
+    r2.forEach(r => {
+      html += '<div class="debate-side ' + (r.side==='bull'?'debate-bull':'debate-bear') + '">' +
+              '<div class="debate-side-label">' + r.label + '</div>' + fmtAnalyst(r.content) + '</div>';
+    });
+    html += '</div>';
+  }
+  document.getElementById('debateRounds').innerHTML = html;
+}
+
+function renderDebate(d) {
+  document.getElementById('debateRounds').innerHTML =
+    '<div class="debate-round"><div class="debate-round-head">第一輪：開場陳述</div>' +
+    '<div class="debate-side debate-bull"><div class="debate-side-label">多方</div>' + fmtAnalyst(d.debate.round1.bull) + '</div>' +
+    '<div class="debate-side debate-bear"><div class="debate-side-label">空方</div>' + fmtAnalyst(d.debate.round1.bear) + '</div></div>' +
+    '<div class="debate-round"><div class="debate-round-head">第二輪：反駁</div>' +
+    '<div class="debate-side debate-bull"><div class="debate-side-label">多方反駁</div>' + fmtAnalyst(d.debate.round2.bull) + '</div>' +
+    '<div class="debate-side debate-bear"><div class="debate-side-label">空方反駁</div>' + fmtAnalyst(d.debate.round2.bear) + '</div></div>';
+  document.getElementById('debateVerdict').innerHTML =
+    '<div class="final-verdict"><div class="final-verdict-title">' +
+    '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+    '辯論裁決</div><div style="font-size:13px;line-height:1.8;">' + fmtAnalyst(d.verdict) + '</div></div>';
+}
+
+/* ==============================================
+   NEWS & SENTIMENT
+============================================== */
+async function runNewsSentiment() {
+  const symbol = document.getElementById('ns-symbol').value.trim();
+  const name   = document.getElementById('ns-name').value.trim() || symbol;
+  if (!symbol) { document.getElementById('ns-symbol').focus(); return; }
+
+  const btn = document.getElementById('nsBtn');
+  btn.disabled = true;
+  let elapsed = 0;
+  const timer = setInterval(() => {
+    btn.innerHTML = '<div class="spin"></div> 抓取中... ' + (++elapsed) + 's';
+  }, 1000);
+
+  document.getElementById('nsDataArea').style.display  = 'none';
+  document.getElementById('nsAiResult').style.display  = 'none';
+
+  try {
+    const sym = /^\d{4}$/.test(symbol) ? symbol + '.TW' : symbol;
+
+    // Fetch news from our RSS endpoint
+    const newsData = await fetch('/api/news/' + encodeURIComponent(sym)).then(r => r.json());
+    const items = Array.isArray(newsData) ? newsData : (newsData.items || []);
+
+    document.getElementById('newsCount').textContent = items.length;
+    document.getElementById('newsList').innerHTML = items.length
+      ? items.map(n =>
+          '<div class="news-item">' +
+          '<div class="news-dot" style="background:var(--t3)"></div>' +
+          '<div><a class="news-title-link" href="' + (n.link||'#') + '" target="_blank" rel="noopener">' + n.title + '</a>' +
+          '<div class="news-meta">' + (n.pubDate ? new Date(n.pubDate).toLocaleDateString('zh-TW') : '—') + '</div>' +
+          '</div></div>'
+        ).join('')
+      : '<div style="color:var(--t3);font-size:12px;padding:10px 0;">無法取得新聞（可能是非台股標的）</div>';
+
+    document.getElementById('pttList').innerHTML =
+      '<div style="color:var(--t3);font-size:12px;">PTT 數據需透過瀏覽器直接爬取，本系統改用 Yahoo Finance RSS 作為新聞來源。</div>';
+
+    document.getElementById('nsDataArea').style.display = 'block';
+
+    // AI sentiment analysis using quick-analysis with news context
+    const newsText = items.slice(0, 8).map(n => n.title).join('\n');
+    const prompt = `請分析以下「${name}（${symbol}）」相關新聞的市場情緒：\n\n${newsText || '暫無新聞'}\n\n請提供：\n1. 每則新聞的情緒評分（-5到+5）\n2. 整體情緒均分\n3. 對股價短期衝擊預估\n4. 是否有利多出盡或利空反彈跡象\n5. 投資建議`;
+
+    const aiRes = await fetch('/api/quick-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'news', content: newsText || '無新聞資料', provider: currentProvider }),
+    });
+    const aiData = await aiRes.json();
+
+    if (aiData.result) {
+      const match = aiData.result.match(/均分[：:]\s*([-+]?[\d.]+)/);
+      updateSentimentGauge(match ? parseFloat(match[1]) : 0);
+      document.getElementById('nsContent').textContent = aiData.result;
+      document.getElementById('nsAiResult').style.display = 'block';
+    }
+
+  } catch (e) {
+    document.getElementById('nsDataArea').style.display = 'block';
+    document.getElementById('nsContent').textContent = '分析失敗：' + e.message;
+    document.getElementById('nsAiResult').style.display = 'block';
+  }
+
+  clearInterval(timer);
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>抓取新聞並分析情緒';
+}
+
+function updateSentimentGauge(score) {
+  const s   = Math.max(-5, Math.min(5, score));
+  const pct = ((s + 5) / 10) * 100;
+  const color = s > 1.5 ? 'var(--green)' : s < -1.5 ? 'var(--red)' : 'var(--amber)';
+  const label = s > 2 ? '樂觀偏多' : s > 0.5 ? '略偏多' : s > -0.5 ? '中性' : s > -2 ? '略偏空' : '悲觀偏空';
+  document.getElementById('gaugeScore').textContent = (s >= 0 ? '+' : '') + s.toFixed(1);
+  document.getElementById('gaugeScore').style.color = color;
+  document.getElementById('gaugeLabel').textContent = label;
+  document.getElementById('gaugeFill').style.cssText = 'width:' + pct + '%;background:' + color + ';transition:width .6s ease;';
+}
+
+async function runKelly() {
+  const winRate = parseFloat(document.getElementById('kl-winrate').value) || 55;
+  const avgWin  = parseFloat(document.getElementById('kl-avgwin').value)  || 8;
+  const avgLoss = parseFloat(document.getElementById('kl-avgloss').value) || 5;
+  const capital = parseFloat(document.getElementById('kl-capital').value) || 1000000;
+  const maxPos  = parseFloat(document.getElementById('kl-max').value)     || 30;
+
+  const btn = document.getElementById('klBtn');
+  btn.disabled = true;
+  let elapsed = 0;
+  const timer = setInterval(() => {
+    btn.innerHTML = '<div class="spin"></div> 計算中... ' + (++elapsed) + 's';
+  }, 1000);
+
+  document.getElementById('klResultArea').style.display = 'none';
+  document.getElementById('klAiResult').style.display   = 'none';
+
+  try {
+    const r = await fetch('/api/kelly', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        winRate, avgWin, avgLoss,
+        totalCapital: capital, maxPositions: maxPos,
+        provider: currentProvider,
+      }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    // d.calc = { fullKellyPct, halfKellyPct, perTradeFull, perTradeHalf, totalExposurePct, winLossRatio, expectedValue }
+    const c = d.calc;
+    const maxKelly  = Math.min(c.fullKellyPct, maxPos);
+    const safeKelly = Math.min(c.halfKellyPct, maxPos);
+
+    document.getElementById('kellyCards').innerHTML = [
+      { val: c.fullKellyPct.toFixed(1) + '%',  color: 'var(--amber)',  lbl: 'Full Kelly（理論最大）' },
+      { val: c.halfKellyPct.toFixed(1) + '%',  color: 'var(--accent)', lbl: 'Half Kelly（建議使用）' },
+      { val: (c.halfKellyPct * 0.5).toFixed(1) + '%', color: 'var(--t2)', lbl: '四分之一凱利（保守型）' },
+      { val: 'NT$' + c.perTradeHalf.toLocaleString(), color: 'var(--green)', lbl: '建議單筆倉位（Half Kelly）' },
+      { val: (c.expectedValue >= 0 ? '+' : '') + c.expectedValue.toFixed(2) + '%',
+        color: c.expectedValue > 0 ? 'var(--green)' : 'var(--red)', lbl: '每筆期望值' },
+      { val: c.winLossRatio.toFixed(2) + 'x', color: 'var(--text)', lbl: '盈虧比（獲利/虧損）' },
+    ].map(item =>
+      '<div class="kelly-card"><div class="kelly-card-val" style="color:' + item.color + '">' + item.val +
+      '</div><div class="kelly-card-lbl">' + item.lbl + '</div></div>'
+    ).join('');
+
+    // Bar visualization
+    document.getElementById('klBar').style.width     = Math.min(c.fullKellyPct, 100) + '%';
+    document.getElementById('klBar').style.background = c.fullKellyPct > 30 ? 'var(--red)' :
+                                                         c.fullKellyPct > 15 ? 'var(--amber)' : 'var(--green)';
+    document.getElementById('klResultArea').style.display = 'block';
+
+    if (d.result) {
+      document.getElementById('klContent').textContent = d.result;
+      document.getElementById('klAiResult').style.display = 'block';
+    }
+  } catch (e) {
+    document.getElementById('klContent').textContent = '計算失敗：' + e.message;
+    document.getElementById('klAiResult').style.display = 'block';
+    document.getElementById('klResultArea').style.display = 'block';
+  }
+
+  clearInterval(timer);
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>計算最佳倉位';
+}
 </script>
 </body>
 </html>
