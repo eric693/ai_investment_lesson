@@ -426,6 +426,31 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 @media (min-width: 769px) {
   .app-body { grid-template-columns: 58px 1fr; }
 }
+
+/* ── Metric Cards (backtest + macro) ── */
+.metrics-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+.metric-card{background:var(--surface);border:1px solid var(--b0);border-radius:10px;padding:14px 12px;text-align:center;}
+.metric-val{font-family:var(--mono);font-size:20px;font-weight:600;line-height:1;margin-bottom:4px;}
+.metric-lbl{font-size:10px;color:var(--t2);line-height:1.3;}
+.metric-sub{font-size:9px;color:var(--t3);margin-top:2px;}
+.metric-card.good .metric-val{color:var(--green);}
+.metric-card.warn .metric-val{color:var(--amber);}
+.metric-card.bad  .metric-val{color:var(--red);}
+.risk-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);}
+.risk-LOW   {background:rgba(34,197,94,.15);color:var(--green);}
+.risk-MEDIUM{background:rgba(245,158,11,.15);color:var(--amber);}
+.risk-HIGH  {background:rgba(239,68,68,.15);color:var(--red);}
+.macro-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;}
+.macro-card{background:var(--surface);border:1px solid var(--b0);border-radius:10px;padding:14px;}
+.macro-card-lbl{font-size:10px;color:var(--t2);margin-bottom:6px;font-family:var(--mono);letter-spacing:.04em;}
+.macro-card-val{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text);}
+.macro-card-prev{font-size:10px;color:var(--t3);margin-top:3px;}
+.anomaly-list{margin-top:10px;}
+.anomaly-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--panel);border-radius:6px;margin-bottom:5px;border-left:3px solid var(--b1);}
+.anomaly-item.spike{border-left-color:var(--red);}
+.anomaly-item.drop{border-left-color:var(--green);}
+.anomaly-date{font-family:var(--mono);font-size:11px;color:var(--t2);}
+.anomaly-z{font-family:var(--mono);font-size:12px;font-weight:600;}
 </style>
 </head>
 <body>
@@ -492,6 +517,15 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
     <button class="ni" data-section="guide">
       <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       <span class="ni-label">說明</span>
+    </button>
+    <div class="nav-sep"></div>
+    <button class="ni" data-section="macro">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span class="ni-label">總經</span>
+    </button>
+    <button class="ni" data-section="blackswan">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="ni-label">黑天鵝</span>
     </button>
   </nav>
 
@@ -591,7 +625,7 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
             <button class="a-btn" id="rpRunBtn" onclick="runRpAnalysis()">
               <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>立即分析
             </button>
-            <div class="a-result" id="rpResult"></div>
+            <div class="a-result" id="rpQuickResult"></div>
           </div>
           <div class="rp-sec">
             <div class="rp-lbl">市場情緒指標</div>
@@ -762,6 +796,9 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
           <button class="submit-btn" id="btBtn" onclick="runBacktest()">
             <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>開始回測分析
           </button>
+        </div>
+        <div id="btMetricsArea" style="display:none;margin-top:16px;">
+          <div class="metrics-row" id="btMetricsRow"></div>
         </div>
         <div class="result-box" id="btResult">
           <div class="result-box-head"><div class="result-box-title">回測分析報告</div><button class="copy-btn" onclick="copyResult('btContent')">複製</button></div>
@@ -989,6 +1026,78 @@ signal <span class="op">=</span> (df[<span class="str">'K'</span>] <span class="
             <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">善用範本庫再客製化</div><div class="step-desc">從「提問範本」庫中選擇適合的範本，發送到對話後，再追加你的個人資訊進一步提問。</div></div></div>
             <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">連續追問深化分析</div><div class="step-desc">AI 有對話記憶。得到初步分析後，繼續追問「那停損點在哪裡？」「如果升息怎麼辦？」深化討論。</div></div></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ 11. MACRO ECONOMIC MODULE ══ -->
+    <div class="sec" id="sec-macro">
+      <div class="sec-header">
+        <div class="sec-title">宏觀經濟數據關聯模組</div>
+        <div class="sec-sub">整合 Fed 利率、CPI、非農就業等總經指標，判斷經濟週期並分析對台股的影響</div>
+      </div>
+      <div class="sec-body">
+        <div id="macroLoading" style="text-align:center;padding:40px;color:var(--t3);font-size:13px;">載入即時總經數據中...</div>
+        <div id="macroCards" class="macro-grid" style="display:none;"></div>
+        <div id="macroFredNotice" style="display:none;margin-bottom:14px;background:var(--panel);border:1px solid var(--amber);border-radius:10px;padding:14px;">
+          <div style="color:var(--amber);font-size:12px;font-weight:600;margin-bottom:6px;">FRED API 未設定</div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.7;">
+            Fed 利率、CPI、PCE、失業率數據需要免費的 FRED API Key。<br>
+            請至 <strong style="color:var(--accent)">fred.stlouisfed.org</strong> 免費申請，然後在 Render 環境變數加入 <code style="color:var(--blue)">FRED_API_KEY</code>。<br>
+            目前僅顯示 VIX（已從 Yahoo Finance 取得）。
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="submit-btn" id="macroAnalyzeBtn" onclick="runMacroAnalysis()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>AI 分析總經環境
+          </button>
+          <button class="submit-btn" style="background:var(--panel);border:1px solid var(--b1);color:var(--t2);" onclick="refreshMacro()">
+            <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;width:13px;height:13px;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+            重新載入數據
+          </button>
+        </div>
+        <div class="result-box" id="macroResult">
+          <div class="result-box-head"><div class="result-box-title">總經環境分析</div><button class="copy-btn" onclick="copyResult('macroContent')">複製</button></div>
+          <div class="result-content" id="macroContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 12. BLACK SWAN WARNING ══ -->
+    <div class="sec" id="sec-blackswan">
+      <div class="sec-header">
+        <div class="sec-title">黑天鵝預警系統</div>
+        <div class="sec-sub">基於滾動 Z-Score 統計模型，偵測 VIX 與個股的異常波動，自動觸發風險警報</div>
+      </div>
+      <div class="sec-body">
+        <div class="form-card">
+          <div class="form-card-title"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>監測標的設定</div>
+          <div class="form-grid cols-3">
+            <div class="form-group"><label class="form-label">監測標的 1</label><input class="form-input" id="bs-sym1" placeholder="例：2330" value="2330"></div>
+            <div class="form-group"><label class="form-label">監測標的 2</label><input class="form-input" id="bs-sym2" placeholder="例：2454" value="2454"></div>
+            <div class="form-group"><label class="form-label">監測標的 3</label><input class="form-input" id="bs-sym3" placeholder="例：2317" value="2317"></div>
+          </div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.7;background:var(--panel);border-radius:8px;padding:10px;">
+            <strong style="color:var(--text)">演算法說明：</strong>
+            系統計算過去 252 個交易日的滾動 20 日均值與標準差，當數值偏離均值超過 2.5 個標準差（Z ≥ ±2.5）時視為統計異常。VIX 與個股同時觸發時，黑天鵝風險大幅提升。
+          </div>
+          <button class="submit-btn" id="bsBtn" onclick="runBlackSwan()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>執行異常偵測
+          </button>
+        </div>
+
+        <div id="bsMetricsArea" style="display:none;">
+          <div class="form-card-title" style="font-size:13px;font-weight:600;padding:0 0 10px;border-bottom:1px solid var(--b0);margin-bottom:14px;">
+            即時 Z-Score 監測結果
+          </div>
+          <div id="bsMetricsGrid" class="metrics-row"></div>
+          <div id="bsAnomalyList"></div>
+        </div>
+
+        <div class="result-box" id="bsResult">
+          <div class="result-box-head"><div class="result-box-title">黑天鵝風險評估</div><button class="copy-btn" onclick="copyResult('bsContent')">複製</button></div>
+          <div class="result-content" id="bsContent"></div>
         </div>
       </div>
     </div>
@@ -1270,7 +1379,7 @@ document.getElementById('analysisType').addEventListener('change',function(){doc
 async function runRpAnalysis(){
   const type=document.getElementById('analysisType').value;
   const content=document.getElementById('analysisInput').value.trim();
-  const result=document.getElementById('rpResult');
+  const result=document.getElementById('rpQuickResult');
   const btn=document.getElementById('rpRunBtn');
   if(type!=='market'&&!content){document.getElementById('analysisInput').focus();return;}
   btn.disabled=true;btn.innerHTML='<div class="spin"></div> 分析中';result.classList.remove('show');
@@ -1461,9 +1570,18 @@ async function callApi(url,body,btnId,resultId,contentId){
   try{
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body, provider: currentProvider})});
     const d=await r.json();
-    content.textContent=d.result;
+    if(d.result){
+      content.textContent=d.result;
+    } else if(d.error){
+      content.textContent='伺服器錯誤：'+d.error+'\n\n可能原因：\n1. API Key 未設定或已過期\n2. 請確認 Render 環境變數已填入 ANTHROPIC_API_KEY 或 OPENAI_API_KEY';
+    } else {
+      content.textContent='回應格式異常，請稍後再試';
+    }
     box.classList.add('show');
-  }catch{content.textContent='分析失敗，請稍後再試';box.classList.add('show');}
+  }catch(err){
+    content.textContent='連線失敗：'+err.message+'\n\n請確認伺服器是否正常運作。若使用 Render 免費方案，首次請求需等待約 30 秒喚醒。';
+    box.classList.add('show');
+  }
   btn.disabled=false;btn.innerHTML=orig;
 }
 
@@ -1486,13 +1604,7 @@ function runTechnical(){
   },'tBtn','tResult','tContent');
 }
 
-function runBacktest(){
-  callApi('/api/backtest',{
-    strategy:document.getElementById('bt-name').value,stock:document.getElementById('bt-stock').value,
-    period:document.getElementById('bt-period').value,capital:document.getElementById('bt-capital').value,
-    buyRule:document.getElementById('bt-buy').value,sellRule:document.getElementById('bt-sell').value
-  },'btBtn','btResult','btContent');
-}
+// runBacktest defined below (enhanced version with Sharpe/MaxDrawdown)
 
 function runAllocation(){
   callApi('/api/allocation',{
@@ -1550,6 +1662,297 @@ function copyCode(btn){
   navigator.clipboard.writeText(pre.textContent);
   btn.textContent='已複製';setTimeout(()=>btn.textContent='複製',2000);
 }
+
+/* ═══════════════════════════
+   MODULE: MACRO ECONOMIC
+═══════════════════════════ */
+let macroDataCache = null;
+
+async function loadMacroData() {
+  try {
+    const data = await fetch('/api/macro').then(r => r.json());
+    macroDataCache = data;
+
+    document.getElementById('macroLoading').style.display = 'none';
+
+    if (!data.fredAvailable) {
+      document.getElementById('macroFredNotice').style.display = 'block';
+    }
+
+    const cards = [];
+
+    // VIX (always available)
+    if (data.vix) {
+      const vixVal = data.vix.value?.toFixed(2);
+      const vixLevel = data.vix.value < 15 ? '低恐慌' : data.vix.value < 25 ? '中度恐慌' : '高恐慌';
+      const vixClass = data.vix.value < 15 ? 'good' : data.vix.value < 25 ? 'warn' : 'bad';
+      cards.push(`<div class="macro-card">
+        <div class="macro-card-lbl">VIX 恐慌指數</div>
+        <div class="macro-card-val" style="color:${vixClass==='good'?'var(--green)':vixClass==='warn'?'var(--amber)':'var(--red)'}">${vixVal}</div>
+        <div class="macro-card-prev">${vixLevel}｜漲跌 ${data.vix.change?.toFixed(2)}%</div>
+      </div>`);
+    }
+
+    // FRED data (if available)
+    if (data.fedRate?.[0]) {
+      const curr = parseFloat(data.fedRate[0].value);
+      const prev = parseFloat(data.fedRate[1]?.value || curr);
+      const trend = curr > prev ? '升息' : curr < prev ? '降息' : '持平';
+      cards.push(`<div class="macro-card">
+        <div class="macro-card-lbl">聯邦基金利率</div>
+        <div class="macro-card-val">${curr}%</div>
+        <div class="macro-card-prev">前次 ${prev}%｜${trend}</div>
+      </div>`);
+    }
+
+    if (data.cpi?.[0]) {
+      const curr = parseFloat(data.cpi[0].value);
+      const prev = parseFloat(data.cpi[1]?.value || curr);
+      const chgPct = ((curr - prev) / prev * 100).toFixed(2);
+      cards.push(`<div class="macro-card">
+        <div class="macro-card-lbl">CPI 消費者物價</div>
+        <div class="macro-card-val">${curr.toFixed(1)}</div>
+        <div class="macro-card-prev">月變動 ${chgPct}%｜${data.cpi[0].date}</div>
+      </div>`);
+    }
+
+    if (data.unemployment?.[0]) {
+      const curr = parseFloat(data.unemployment[0].value);
+      cards.push(`<div class="macro-card">
+        <div class="macro-card-lbl">美國失業率</div>
+        <div class="macro-card-val" style="color:${curr < 4 ? 'var(--green)' : curr < 6 ? 'var(--amber)' : 'var(--red)'}">${curr}%</div>
+        <div class="macro-card-prev">${data.unemployment[0].date}</div>
+      </div>`);
+    }
+
+    if (data.treasury10y?.[0]) {
+      const curr = parseFloat(data.treasury10y[0].value);
+      cards.push(`<div class="macro-card">
+        <div class="macro-card-lbl">10年期美債殖利率</div>
+        <div class="macro-card-val">${curr}%</div>
+        <div class="macro-card-prev">${data.treasury10y[0].date}</div>
+      </div>`);
+    }
+
+    if (data.nfp?.[0]) {
+      const curr = parseFloat(data.nfp[0].value);
+      cards.push(`<div class="macro-card">
+        <div class="macro-card-lbl">非農就業（千人）</div>
+        <div class="macro-card-val">${curr.toLocaleString()}</div>
+        <div class="macro-card-prev">${data.nfp[0].date}</div>
+      </div>`);
+    }
+
+    document.getElementById('macroCards').innerHTML = cards.join('');
+    document.getElementById('macroCards').style.display = 'grid';
+  } catch (e) {
+    document.getElementById('macroLoading').textContent = '數據載入失敗，請稍後重試';
+  }
+}
+
+async function refreshMacro() {
+  document.getElementById('macroLoading').style.display = 'block';
+  document.getElementById('macroLoading').textContent = '重新載入中...';
+  document.getElementById('macroCards').style.display = 'none';
+  await loadMacroData();
+}
+
+async function runMacroAnalysis() {
+  if (!macroDataCache) { await loadMacroData(); }
+  const btn = document.getElementById('macroAnalyzeBtn');
+  const box = document.getElementById('macroResult');
+  const content = document.getElementById('macroContent');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> AI 分析中...';
+  box.classList.remove('show');
+  try {
+    const r = await fetch('/api/macro/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ macroData: macroDataCache, provider: currentProvider }),
+    });
+    const d = await r.json();
+    content.textContent = d.result;
+    box.classList.add('show');
+  } catch {
+    content.textContent = '分析失敗，請稍後再試';
+    box.classList.add('show');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>AI 分析總經環境';
+}
+
+// Auto-load macro data when section is opened
+const origNavHandler = document.querySelectorAll('.ni');
+// We'll hook into nav click in the existing nav handler
+
+/* ═══════════════════════════
+   MODULE: BLACK SWAN
+═══════════════════════════ */
+async function runBlackSwan() {
+  const symbols = [
+    document.getElementById('bs-sym1').value.trim(),
+    document.getElementById('bs-sym2').value.trim(),
+    document.getElementById('bs-sym3').value.trim(),
+  ].filter(Boolean);
+
+  const btn = document.getElementById('bsBtn');
+  const box = document.getElementById('bsResult');
+  const content = document.getElementById('bsContent');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> 偵測中（需約 10-15 秒）...';
+  box.classList.remove('show');
+  document.getElementById('bsMetricsArea').style.display = 'none';
+
+  try {
+    const r = await fetch('/api/blackswan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols: symbols.map(s => s + '.TW'), provider: currentProvider }),
+    });
+    const d = await r.json();
+
+    // Render metric cards
+    if (d.analysis) {
+      const metricCards = [];
+      const anomalyItems = [];
+
+      for (const [sym, a] of Object.entries(d.analysis)) {
+        const label = sym === '^VIX' ? 'VIX' : sym.replace('.TW','');
+        const zAbs = Math.abs(a.currentZscore);
+        const cardClass = zAbs > 3 ? 'bad' : zAbs > 2 ? 'warn' : 'good';
+
+        metricCards.push(`<div class="metric-card ${cardClass}">
+          <div class="metric-val">${a.currentZscore > 0 ? '+' : ''}${a.currentZscore}</div>
+          <div class="metric-lbl">${label} 價格 Z 值</div>
+          <div class="metric-sub"><span class="risk-badge risk-${a.riskLevel}">${a.riskLevel}</span></div>
+        </div>`);
+
+        metricCards.push(`<div class="metric-card ${Math.abs(a.volZscore) > 2.5 ? 'warn' : 'good'}">
+          <div class="metric-val">${a.volZscore > 0 ? '+' : ''}${a.volZscore}</div>
+          <div class="metric-lbl">${label} 成交量 Z 值</div>
+          <div class="metric-sub">異常次數 ${a.totalAnomalies}</div>
+        </div>`);
+
+        if (a.recentAnomalies?.length) {
+          anomalyItems.push(`<div style="margin-bottom:8px;font-size:11px;color:var(--t2);font-family:var(--mono);letter-spacing:.04em;">${label} 近期價格異常</div>`);
+          a.recentAnomalies.slice(-3).forEach(an => {
+            anomalyItems.push(`<div class="anomaly-item ${an.direction}">
+              <span class="anomaly-date">${an.date}</span>
+              <span style="font-size:11px;color:var(--t2)">均值 ${an.mean}%</span>
+              <span class="anomaly-z" style="color:${an.zscore > 0 ? 'var(--red)' : 'var(--green)'}">${an.zscore > 0 ? '+' : ''}${an.zscore}σ</span>
+            </div>`);
+          });
+        }
+      }
+
+      document.getElementById('bsMetricsGrid').innerHTML = metricCards.join('');
+      document.getElementById('bsAnomalyList').innerHTML = anomalyItems.length
+        ? `<div class="anomaly-list" style="margin-top:14px;">${anomalyItems.join('')}</div>`
+        : '';
+      document.getElementById('bsMetricsArea').style.display = 'block';
+    }
+
+    content.textContent = d.aiAnalysis;
+    box.classList.add('show');
+  } catch (e) {
+    content.textContent = '偵測失敗：' + e.message;
+    box.classList.add('show');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>執行異常偵測';
+}
+
+/* ═══════════════════════════
+   ENHANCED BACKTEST METRICS
+═══════════════════════════ */
+// Enhanced runBacktest with real market metrics
+async function runBacktest() {
+  const btn = document.getElementById('btBtn');
+  const box = document.getElementById('btResult');
+  const content = document.getElementById('btContent');
+  btn.disabled = true;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<div class="spin"></div> AI 分析中...';
+  box.classList.remove('show');
+  document.getElementById('btMetricsArea').style.display = 'none';
+
+  try {
+    const body = {
+      strategy: document.getElementById('bt-name').value,
+      stock:    document.getElementById('bt-stock').value,
+      period:   document.getElementById('bt-period').value,
+      capital:  document.getElementById('bt-capital').value,
+      buyRule:  document.getElementById('bt-buy').value,
+      sellRule: document.getElementById('bt-sell').value,
+      provider: currentProvider,
+    };
+
+    const r = await fetch('/api/backtest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+
+    // Show real market metrics if available
+    if (d.metrics) {
+      const m = d.metrics;
+      const sharpeClass = m.sharpe > 2 ? 'good' : m.sharpe > 1 ? 'warn' : 'bad';
+      const ddClass = Math.abs(m.maxDD) < 15 ? 'good' : Math.abs(m.maxDD) < 30 ? 'warn' : 'bad';
+
+      document.getElementById('btMetricsRow').innerHTML = `
+        <div class="metric-card ${sharpeClass}">
+          <div class="metric-val">${m.sharpe ?? '—'}</div>
+          <div class="metric-lbl">夏普比率</div>
+          <div class="metric-sub">Sharpe Ratio</div>
+        </div>
+        <div class="metric-card ${ddClass}">
+          <div class="metric-val">${m.maxDD}%</div>
+          <div class="metric-lbl">最大回撤</div>
+          <div class="metric-sub">Max Drawdown</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--accent)">${m.annualReturn}%</div>
+          <div class="metric-lbl">年化報酬</div>
+          <div class="metric-sub">被動持有</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">${m.annualVol}%</div>
+          <div class="metric-lbl">年化波動率</div>
+          <div class="metric-sub">Volatility</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">${m.calmar ?? '—'}</div>
+          <div class="metric-lbl">卡瑪比率</div>
+          <div class="metric-sub">Calmar Ratio</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">${m.winRate}%</div>
+          <div class="metric-lbl">上漲日勝率</div>
+          <div class="metric-sub">${m.dataPoints} 交易日</div>
+        </div>`;
+      document.getElementById('btMetricsArea').style.display = 'block';
+    }
+
+    content.textContent = d.result;
+    box.classList.add('show');
+  } catch {
+    content.textContent = '分析失敗，請稍後再試';
+    box.classList.add('show');
+  }
+  btn.disabled = false;
+  btn.innerHTML = orig;
+}
+
+/* ── Hook macro load into nav switch ── */
+document.querySelectorAll('.ni').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.section === 'macro' && !macroDataCache) {
+      setTimeout(loadMacroData, 100);
+    }
+  });
+});
 </script>
 </body>
 </html>
