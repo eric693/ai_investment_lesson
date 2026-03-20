@@ -1565,8 +1565,18 @@ async function callApi(url,body,btnId,resultId,contentId){
   const content=document.getElementById(contentId);
   btn.disabled=true;
   const orig=btn.innerHTML;
-  btn.innerHTML='<div class="spin"></div> AI 分析中...';
   box.classList.remove('show');
+
+  // Countdown timer so user knows it's working
+  let elapsed=0;
+  const isReport = url.includes('/api/report') || url.includes('/api/monthly') || url.includes('/api/macro');
+  const hint = isReport ? '（長篇報告約需 30-60 秒）' : '';
+  const timer = setInterval(()=>{
+    elapsed++;
+    btn.innerHTML=`<div class="spin"></div> AI 分析中... ${elapsed}s ${hint}`;
+  },1000);
+  btn.innerHTML=`<div class="spin"></div> AI 分析中... 0s ${hint}`;
+
   try{
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body, provider: currentProvider})});
     const d=await r.json();
@@ -1582,6 +1592,7 @@ async function callApi(url,body,btnId,resultId,contentId){
     content.textContent='連線失敗：'+err.message+'\n\n請確認伺服器是否正常運作。若使用 Render 免費方案，首次請求需等待約 30 秒喚醒。';
     box.classList.add('show');
   }
+  clearInterval(timer);
   btn.disabled=false;btn.innerHTML=orig;
 }
 
