@@ -1023,15 +1023,37 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 
         <div class="guide-panel active" id="gp-overview">
           <div class="guide-card">
-            <div class="chart-card-title" style="margin-bottom:16px;font-size:13px;color:var(--text);"><span>智投 AI 全方位投資系統 — 功能總覽</span></div>
-            <div class="guide-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">AI 對話理專</div><div class="step-desc">用自然語言詢問任何投資問題。支援串流回覆、對話歷史記憶，可詢問個股分析、策略規劃、新聞解讀等。</div></div></div>
-            <div class="guide-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">模組化提問範本庫</div><div class="step-desc">16 個精選投資提問範本，涵蓋財報分析、選股操作、進退場時機、整合分析。一鍵套用，直接與 AI 對話。</div></div></div>
-            <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">AI 投資儀表板</div><div class="step-desc">視覺化呈現投資組合淨值、產業配置、持股明細與月績效走勢。</div></div></div>
-            <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">AI 自動化估值模組</div><div class="step-desc">輸入 P/E、ROE、EPS 等財務數據，AI 自動計算合理價格區間、安全邊際，給出投資評等。</div></div></div>
-            <div class="guide-step"><div class="step-num">5</div><div class="step-body"><div class="step-title">技術指標分析模組</div><div class="step-desc">輸入均線、KD、RSI 等技術指標數值，AI 解讀訊號並給出操作建議（進場點、停損點、目標價）。</div></div></div>
-            <div class="guide-step"><div class="step-num">6</div><div class="step-body"><div class="step-title">回測分析模組</div><div class="step-desc">描述你的投資策略（買入/賣出條件），AI 模擬回測並評估年化報酬、最大回撤、策略優缺點。</div></div></div>
-            <div class="guide-step"><div class="step-num">7</div><div class="step-body"><div class="step-title">投資組合配置</div><div class="step-desc">輸入當前持股，AI 分析多元性、集中風險，給出最佳化配置建議。</div></div></div>
-            <div class="guide-step"><div class="step-num">8</div><div class="step-body"><div class="step-title">自動化投資報告 + 每月摘要</div><div class="step-desc">一鍵生成完整投資分析報告，或選擇月份生成市場重點摘要推播。</div></div></div>
+            <div class="chart-card-title" style="margin-bottom:16px;font-size:13px;color:var(--text);"><span>智投 AI 全方位投資系統 — 15 個功能模組總覽</span></div>
+
+            <div class="guide-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">AI 對話理專</div><div class="step-desc">用自然語言詢問任何投資問題，AI 串流即時回覆，具對話記憶，可連續追問深化分析。左側快速詢問按鈕、自選股即時報價、右側快速分析工具。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">模組化 AI 提問範本庫</div><div class="step-desc">16 個專業提問範本，分為財報分析、選股操作、精準進退場、整合分析四類。一鍵套用到對話，或複製到任何 AI 工具使用。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">AI 投資儀表板</div><div class="step-desc">即時視覺化市場概覽。台積電 6 個月走勢圖、產業配置圓餅圖、5 檔自選股即時報價、台加權月績效長條圖，所有數字來自 Yahoo Finance 真實資料。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">7 位 AI 分析師系統</div><div class="step-desc">輸入股票代號，依序啟動：基本面分析師、技術分析師、新聞情緒分析師、市場情緒分析師、長線投資策略師、短線交易員，最後由最終決策官綜合輸出評等（強力買入至強力賣出）與目標價。每位完成即時顯示，約 30-60 秒。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">5</div><div class="step-body"><div class="step-title">多智能體多空辯論</div><div class="step-desc">在分析師模式選擇「多空辯論」，多頭與空頭 AI 進行兩輪辯論，中立裁判給出最終裁決。設計目的是過濾 AI 的過度樂觀幻覺，使分析更接近真實的投資委員會決策流程。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">6</div><div class="step-body"><div class="step-title">新聞情緒分析</div><div class="step-desc">從 Yahoo Finance RSS 抓取個股最新新聞，AI 對每則新聞進行情緒評分（-5 到 +5），計算整體情緒均分，判斷是否有利多出盡或利空反彈的逆向訊號。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">7</div><div class="step-body"><div class="step-title">AI 自動化估值模組（DCF 2.0 + PE Band）</div><div class="step-desc">系統自動從 Yahoo Finance 取得即時股價與財務數據。PE Band 採 ±1σ、±2σ 標準差區間，比歷史高低點更有統計意義。DCF 模型採動態遞減成長率並自動估算 WACC，計算終值與每股內在價值。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">8</div><div class="step-body"><div class="step-title">技術指標分析模組</div><div class="step-desc">輸入 MA5/MA20/MA60、KD、RSI、成交量趨勢，系統先自動抓取近 30 日歷史數據，AI 分析均線多空排列、技術訊號、支撐壓力位，給出進場點、停損點、目標價。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">9</div><div class="step-body"><div class="step-title">回測分析模組（Sharpe + MaxDD + Kelly）</div><div class="step-desc">描述買入/賣出條件，系統從 Yahoo Finance 抓取真實歷史數據，計算夏普比率（Sharpe Ratio）、最大回撤（Max Drawdown）、卡瑪比率，並用凱利公式給出建議倉位。AI 額外分析三種策略失效情境。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">10</div><div class="step-body"><div class="step-title">凱利公式倉位管理</div><div class="step-desc">輸入策略勝率、平均獲利/虧損比，計算 Full Kelly（理論最大）、Half Kelly（建議使用）、四分之一凱利（保守型）的最佳倉位比例與每筆建議金額。AI 解讀實務應用與常見陷阱。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">11</div><div class="step-body"><div class="step-title">投資組合配置</div><div class="step-desc">輸入持股明細，AI 分析集中度、多元性、產業配置，給出最佳化比例建議、減碼/增碼說明、推薦新標的。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">12</div><div class="step-body"><div class="step-title">自動化投資報告 & 每月摘要</div><div class="step-desc">一鍵生成含執行摘要、市場回顧、持股分析、風險評估的完整投資報告（約 30-60 秒）。每月摘要自動整理大盤走勢、產業亮點、籌碼動向。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">13</div><div class="step-body"><div class="step-title">宏觀經濟數據關聯模組</div><div class="step-desc">整合 Fed 利率、CPI、PCE、失業率、10 年期美債、非農就業（NFP）、VIX 等指標，AI 判斷目前處於擴張/過熱/收縮/復甦哪個週期，並分析對台股的具體影響與建議資產配置。需要免費的 FRED API Key。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">14</div><div class="step-body"><div class="step-title">黑天鵝預警系統（孤立森林 + Z-Score）</div><div class="step-desc">同時使用兩種演算法：滾動 Z-Score（|Z| ≥ 2.5 為異常）和孤立森林（Isolation Forest，分數 > 0.65 為異常）。對 VIX 與個股同時偵測價格與成交量兩個維度，AI 給出 Emergency Stop 觸發條件。</div></div></div>
+
+            <div class="guide-step"><div class="step-num">15</div><div class="step-body"><div class="step-title">使用說明 & Python 程式範例</div><div class="step-desc">目前你所在的頁面。包含所有模組說明、可直接執行的 Python 程式碼（股價抓取、KD 指標計算、估值計算），以及建議的每日投資工作流程。</div></div></div>
           </div>
         </div>
 
@@ -1106,18 +1128,25 @@ signal <span class="op">=</span> (df[<span class="str">'K'</span>] <span class="
         <div class="guide-panel" id="gp-workflow">
           <div class="guide-card">
             <div class="step-title" style="margin-bottom:16px;font-size:14px;">建議每日 AI 投資工作流</div>
-            <div class="guide-step"><div class="step-num">AM</div><div class="step-body"><div class="step-title">09:00 — 開盤前準備</div><div class="step-desc">使用「每月摘要」查看近期市場趨勢。至 AI 對話詢問「今日大盤展望與需注意的事件」。</div></div></div>
-            <div class="guide-step"><div class="step-num">AM</div><div class="step-body"><div class="step-title">09:30 — 盤中觀察</div><div class="step-desc">有興趣的個股，使用「技術指標分析」模組輸入即時數據，獲得 AI 進出場建議。</div></div></div>
-            <div class="guide-step"><div class="step-num">PM</div><div class="step-body"><div class="step-title">13:30 — 收盤後檢視</div><div class="step-desc">使用「AI 對話」詢問今日市場重點。有財報時用「AI 估值模組」重新評估目標價。</div></div></div>
-            <div class="guide-step"><div class="step-num">週</div><div class="step-body"><div class="step-title">每週五 — 組合健診</div><div class="step-desc">使用「投資組合配置」模組檢視本週組合表現與集中度風險，必要時調整配置。</div></div></div>
-            <div class="guide-step"><div class="step-num">月</div><div class="step-body"><div class="step-title">月底 — 生成月報</div><div class="step-desc">使用「自動化投資報告」生成本月完整報告，並搭配「每月摘要」進行下月規劃。</div></div></div>
+            <div class="guide-step"><div class="step-num">AM</div><div class="step-body"><div class="step-title">09:00 — 開盤前準備</div><div class="step-desc">查看「宏觀經濟」模組了解總經背景，再到「每月摘要」確認近期市場趨勢。到 AI 對話詢問「今日大盤展望與需注意的事件」。</div></div></div>
+            <div class="guide-step"><div class="step-num">AM</div><div class="step-body"><div class="step-title">09:30 — 盤中觀察</div><div class="step-desc">有興趣的個股，使用「技術指標分析」輸入即時數據獲得進出場建議。想做深度研究，啟動「7 位 AI 分析師」系統獲得完整多維度評估。</div></div></div>
+            <div class="guide-step"><div class="step-num">PM</div><div class="step-body"><div class="step-title">13:30 — 收盤後檢視</div><div class="step-desc">用「新聞情緒分析」掃描當日個股新聞情緒。有財報時用「估值模組」的 DCF 2.0 + PE Band 重新評估目標價。</div></div></div>
+            <div class="guide-step"><div class="step-num">週</div><div class="step-body"><div class="step-title">每週五 — 風險健診</div><div class="step-desc">用「黑天鵝預警」掃描異常訊號（孤立森林分數 > 0.65 需留意）。用「投資組合配置」檢視集中度風險。用「凱利公式」重新確認每筆建議倉位是否合理。</div></div></div>
+            <div class="guide-step"><div class="step-num">月</div><div class="step-body"><div class="step-title">月底 — 生成月報</div><div class="step-desc">使用「自動化投資報告」生成完整月報，搭配「每月摘要」進行下月規劃。到「多空辯論」對下月重點持股進行一次辯論，確認沒有遺漏的風險。</div></div></div>
+          </div>
+          <div class="guide-card">
+            <div class="step-title" style="margin-bottom:16px;font-size:14px;">各模組選用指南</div>
+            <div class="guide-step"><div class="step-num">快</div><div class="step-body"><div class="step-title">想快速了解一檔股票</div><div class="step-desc">直接在「AI 對話」輸入股票代號，或點選自選股區的即時報價，1 分鐘內獲得初步分析。</div></div></div>
+            <div class="guide-step"><div class="step-num">深</div><div class="step-body"><div class="step-title">想做深度投資研究</div><div class="step-desc">使用「7 位 AI 分析師」+ 「多空辯論」，獲得最完整的多維度分析，適合在決定重大倉位前使用。</div></div></div>
+            <div class="guide-step"><div class="step-num">量</div><div class="step-body"><div class="step-title">想了解策略的歷史績效</div><div class="step-desc">使用「回測分析模組」描述買賣條件，系統自動計算 Sharpe Ratio 與 Max Drawdown，再用「凱利公式」決定合理倉位。</div></div></div>
+            <div class="guide-step"><div class="step-num">險</div><div class="step-body"><div class="step-title">想監控市場風險</div><div class="step-desc">使用「黑天鵝預警」偵測異常波動，結合「宏觀經濟」判斷整體環境，VIX 飆升時自動出現高風險警告。</div></div></div>
           </div>
           <div class="guide-card">
             <div class="step-title" style="margin-bottom:16px;font-size:14px;">AI 提問技巧 — 讓分析更精準</div>
-            <div class="guide-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">提供具體背景資訊</div><div class="step-desc">不說「分析台積電」，而說「我在 680 元買入台積電，現在 900 元，持有 6 個月，請問是否應該獲利了結？」</div></div></div>
-            <div class="guide-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">說明你的投資目標</div><div class="step-desc">告訴 AI 你的風險承受度（保守/積極）、投資期間（短中長期）、目標報酬率，讓建議更符合需求。</div></div></div>
-            <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">善用範本庫再客製化</div><div class="step-desc">從「提問範本」庫中選擇適合的範本，發送到對話後，再追加你的個人資訊進一步提問。</div></div></div>
-            <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">連續追問深化分析</div><div class="step-desc">AI 有對話記憶。得到初步分析後，繼續追問「那停損點在哪裡？」「如果升息怎麼辦？」深化討論。</div></div></div>
+            <div class="guide-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">提供具體背景</div><div class="step-desc">不說「分析台積電」，而說「我在 680 元買入台積電，現在 900 元，持有 6 個月，請問是否應該獲利了結？」AI 的建議會更精準。</div></div></div>
+            <div class="guide-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">說明風險承受度</div><div class="step-desc">告訴 AI 你是保守型或積極型投資人、投資期間（短中長期）、目標報酬率，讓建議更符合個人需求。</div></div></div>
+            <div class="guide-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">善用範本庫</div><div class="step-desc">從「提問範本」選適合的框架，套用後再填入自己的股票名稱與數字，比從頭打字快很多，且分析更全面。</div></div></div>
+            <div class="guide-step"><div class="step-num">4</div><div class="step-body"><div class="step-title">連續追問深化</div><div class="step-desc">AI 有對話記憶。得到初步分析後繼續追問「那停損點設在哪裡？」「如果 Fed 再升息怎麼辦？」可以持續深化討論。</div></div></div>
           </div>
         </div>
       </div>
