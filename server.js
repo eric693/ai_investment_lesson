@@ -336,34 +336,94 @@ app.get('/api/watchlist', async (_req, res) => {
 
 app.get('/api/chart/:symbol', async (req, res) => {
   const { symbol } = req.params;
-  const period = req.query.period || '6mo', interval = req.query.interval || '1d';
+  const period   = req.query.period   || '6mo';
+  const interval = req.query.interval || '1d';
   const k = `chart:${symbol}:${period}:${interval}`;
   const cached = getCache(k);
   if (cached) return res.json(cached);
 
-  const dayMap = { '1mo':30,'3mo':90,'6mo':180,'1y':365,'2y':730,'5y':1825 };
-  const days   = dayMap[period] || 180;
+  // Map period string to yahoo-finance2 range
+  const rangeMap = {
+    '1mo':'1mo', '3mo':'3mo', '6mo':'6mo',
+    '1y':'1y',   '2y':'2y',   '5y':'5y',
+  };
+  const range = rangeMap[period] || '6mo';
 
-  // Use unix timestamps (more reliable than Date objects with yahoo-finance2)
-  const now   = Math.floor(Date.now() / 1000);
-  const start = now - days * 86400;
+  // Map interval
+  const intervalMap = {
+    '1d':'1d', '1wk':'1wk', '1mo':'1mo',
+  };
+  const intv = intervalMap[interval] || '1d';
 
-  // Retry helper with warm-up attempt
-  async function fetchWithRetry(attempts = 3) {
+  async function tryFetch(attempts = 3) {
     for (let i = 0; i < attempts; i++) {
       try {
-        const raw = await yf.historical(symbol, {
-          period1: start,
-          period2: now,
-          interval,
+        // Try yf.chart() first (v8 API — more reliable than v7 CSV download)
+        const r = await yf.chart(symbol, {
+          range,
+          interval: intv,
+          includePrePost: false,
         }, YFO);
-        if (raw && raw.length > 0) return raw;
-        // Got empty array — wait and try again
+
+        const quotes = r?.quotes || r?.indicators?.quote?.[0] || [];
+        const timestamps = r?.timestamp || [];
+
+        let rows = [];
+        if (Array.isArray(quotes) && quotes.length > 0 && quotes[0]?.close != null) {
+          // chart() returns array of {date, open, high, low, close, volume}
+          rows = quotes
+            .filter(q => q.close != null)
+            .map(q => ({
+              date:   q.date instanceof Date
+                        ? q.date.toISOString().split('T')[0]
+                        : new Date(q.date * 1000).toISOString().split('T')[0],
+              open:   q.open   ?? null,
+              high:   q.high   ?? null,
+              low:    q.low    ?? null,
+              close:  q.close,
+              volume: q.volume ?? null,
+            }));
+        } else if (timestamps.length > 0 && r?.indicators?.quote?.[0]) {
+          // Alternative structure: parallel arrays
+          const q = r.indicators.quote[0];
+          rows = timestamps
+            .map((ts, idx) => ({
+              date:   new Date(ts * 1000).toISOString().split('T')[0],
+              open:   q.open?.[idx]   ?? null,
+              high:   q.high?.[idx]   ?? null,
+              low:    q.low?.[idx]    ?? null,
+              close:  q.close?.[idx]  ?? null,
+              volume: q.volume?.[idx] ?? null,
+            }))
+            .filter(d => d.close != null);
+        }
+
+        if (rows.length > 0) return rows;
+
+        // yf.chart() returned empty — fall back to yf.historical()
+        console.log(`chart() returned empty for ${symbol}, trying historical()...`);
+        const dayMap = {'1mo':30,'3mo':90,'6mo':180,'1y':365,'2y':730,'5y':1825};
+        const p1 = new Date();
+        p1.setDate(p1.getDate() - (dayMap[period] || 180));
+        const hist = await yf.historical(symbol, { period1: p1, interval: intv }, YFO);
+        const histRows = (hist || [])
+          .map(d => ({
+            date:   d.date instanceof Date ? d.date.toISOString().split('T')[0] : String(d.date).split('T')[0],
+            open:   d.open   ?? null,
+            high:   d.high   ?? null,
+            low:    d.low    ?? null,
+            close:  d.close  ?? null,
+            volume: d.volume ?? null,
+          }))
+          .filter(d => d.close != null);
+
+        if (histRows.length > 0) return histRows;
+
         if (i < attempts - 1) {
-          await warmupYahooFinance();
           await new Promise(r => setTimeout(r, 1500 * (i + 1)));
         }
       } catch (err) {
+        console.warn(`chart attempt ${i+1} for ${symbol}:`, err.message);
         if (i === attempts - 1) throw err;
         await new Promise(r => setTimeout(r, 1500 * (i + 1)));
       }
@@ -372,20 +432,16 @@ app.get('/api/chart/:symbol', async (req, res) => {
   }
 
   try {
-    const raw    = await fetchWithRetry(3);
-    const result = (raw || []).map(d => ({
-      date:   d.date instanceof Date ? d.date.toISOString().split('T')[0] : String(d.date).split('T')[0],
-      open:   d.open   ?? null,
-      high:   d.high   ?? null,
-      low:    d.low    ?? null,
-      close:  d.close  ?? null,
-      volume: d.volume ?? null,
-    })).filter(d => d.close !== null);
-
-    if (result.length > 0) setCache(k, result, 300_000);
+    const result = await tryFetch(3);
+    if (result.length > 0) {
+      setCache(k, result, 300_000);
+      console.log(`chart ${symbol}: ${result.length} rows OK`);
+    } else {
+      console.warn(`chart ${symbol}: returned 0 rows after all attempts`);
+    }
     res.json(result);
   } catch (e) {
-    console.error(`chart ${symbol}:`, e.message);
+    console.error(`chart ${symbol} failed:`, e.message);
     res.status(500).json({ error: e.message });
   }
 });

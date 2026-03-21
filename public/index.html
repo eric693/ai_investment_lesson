@@ -510,8 +510,8 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 /* ── Custom Watchlist Editor ── */
 .wl-editor-wrap{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:16px;margin-bottom:16px;}
 .wl-editor-title{font-size:12px;font-weight:600;color:var(--t2);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
-.wl-editor-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;}
-@media(max-width:600px){.wl-editor-grid{grid-template-columns:repeat(2,1fr);}}
+.wl-editor-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.wl-input-wrap{flex:1;min-width:120px;}
 .wl-input-wrap{display:flex;flex-direction:column;gap:4px;}
 .wl-input-label{font-size:9.5px;color:var(--t3);font-family:var(--mono);letter-spacing:.06em;}
 .wl-input{background:var(--panel);border:1px solid var(--b0);border-radius:7px;padding:7px 9px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;width:100%;transition:border-color .12s;}
