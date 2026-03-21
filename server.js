@@ -257,6 +257,11 @@ app.get('/api/custom-watchlist', async (req, res) => {
     return s;
   });
 
+  // ← 補上 cache 讀取
+  const ckey = 'cw:' + syms.join(',');
+  const cached = getCache(ckey);
+  if (cached) return res.json(cached);
+
   const settled = await Promise.allSettled(syms.map(s => yf.quote(s, {}, YFO)));
   const result  = settled.map((r, i) => {
     const sym  = syms[i];
@@ -279,10 +284,9 @@ app.get('/api/custom-watchlist', async (req, res) => {
     };
   });
 
-  if (result.some(r => r.price > 0)) setCache('cw:' + syms.join(','), result, 60_000);
+  if (result.some(r => r.price > 0)) setCache(ckey, result, 60_000);
   res.json(result);
 });
-
 app.get('/api/watchlist', async (_req, res) => {
   const cached = getCache('watchlist');
   if (cached) return res.json(cached);
