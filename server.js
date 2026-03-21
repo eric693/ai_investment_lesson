@@ -1329,27 +1329,39 @@ app.post('/api/monthly', async (req, res) => {
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 // ── Startup: warm up Yahoo Finance crumb before taking requests ──
 async function warmupYahooFinance() {
-  try {
-    console.log('Warming up Yahoo Finance crumb...');
-    await yf.quote('AAPL', {}, YFO);
-    console.log('Yahoo Finance ready.');
-  } catch (e) {
-    console.warn('Yahoo Finance warm-up failed (will retry on first request):', e.message);
+  for (let attempt = 1; attempt <= 8; attempt++) {
+    try {
+      console.log(`Warming up YF attempt ${attempt}...`);
+      const q = await yf.quote('AAPL', {}, YFO);
+      if (q?.regularMarketPrice > 0) {
+        console.log('YF ready, AAPL:', q.regularMarketPrice);
+        return true;
+      }
+    } catch (e) {
+      console.warn(`warmup ${attempt} failed:`, e.message);
+    }
+    await new Promise(r => setTimeout(r, 2000));
   }
+  console.warn('YF warmup gave up after 8 attempts');
+  return false;
 }
 
 app.listen(PORT, async () => {
   console.log(`🚀 智投 AI — http://localhost:${PORT}`);
-  // Warm up crumb so first user requests don't get 0 prices
   await warmupYahooFinance();
-  // Pre-populate cache
-  try {
-    const quotes = await yf.quote(['2330.TW','2454.TW','^TWII','^VIX','^GSPC'], {}, YFO);
-    const arr = Array.isArray(quotes) ? quotes : [quotes];
-    if (arr.some(q => (q.regularMarketPrice ?? 0) > 0)) {
-      console.log('Cache pre-warmed:', arr.map(q => `${q.symbol}:${q.regularMarketPrice}`).join(', '));
+  // Pre-populate cache 等 warmup 確實完成
+  for (let i = 0; i < 3; i++) {
+    try {
+      const quotes = await yf.quote(['2330.TW','2454.TW','^TWII','^VIX','^GSPC'], {}, YFO);
+      const arr = Array.isArray(quotes) ? quotes : [quotes];
+      if (arr.some(q => (q.regularMarketPrice ?? 0) > 0)) {
+        console.log('Cache pre-warmed:', arr.map(q => `${q.symbol}:${q.regularMarketPrice}`).join(', '));
+        break;
+      }
+      await new Promise(r => setTimeout(r, 2000));
+    } catch (e) {
+      console.warn('Pre-warm attempt failed:', e.message);
+      await new Promise(r => setTimeout(r, 2000));
     }
-  } catch (e) {
-    console.warn('Pre-warm cache failed:', e.message);
   }
 });

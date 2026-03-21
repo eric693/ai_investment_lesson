@@ -1651,24 +1651,25 @@ async function loadWatchlist() { return loadWatchlistData(); }
 loadWatchlistEditorInputs();
 
 async function loadWithRetry() {
+  await loadMarketIndicators();
   await loadWatchlistData();
-  // If prices still 0 after 4 seconds, retry (server warming up)
-  setTimeout(async () => {
-    const kv = document.getElementById('kpiS1');
-    if (!kv || kv.textContent === '—' || kv.textContent.includes('0.0')) {
-      console.log('Prices still 0, retrying...');
-      await loadWatchlistData();
+
+  // Render 冷啟動：積極重試，每 3 秒一次，最多 6 次
+  for (let i = 1; i <= 6; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    const kv = document.getElementById('kpiTWII');
+    const isZero = !kv || kv.textContent === '—' || kv.textContent === '0' || kv.textContent.includes('0.0');
+    if (!isZero) {
+      console.log('Data loaded after retry', i);
+      break;
     }
-  }, 4000);
-  // Final retry at 10s for Render cold start
-  setTimeout(async () => {
-    const kv = document.getElementById('kpiS1');
-    if (!kv || kv.textContent === '—' || kv.textContent.includes('0.0')) {
-      console.log('Final retry...');
-      await loadWatchlistData();
-      initCharts();
-    }
-  }, 10000);
+    console.log(`Retry ${i}: prices still 0, retrying...`);
+    await loadMarketIndicators();
+    await loadWatchlistData();
+    if (i === 3 && !chartsInited) initCharts();
+  }
+
+  if (!chartsInited) initCharts();
 }
 loadWithRetry();
 setInterval(loadWatchlist, 60_000);
