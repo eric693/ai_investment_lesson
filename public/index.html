@@ -777,7 +777,15 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
     <div class="sec" id="sec-dashboard">
       <div class="sec-header">
         <div class="sec-title">AI 投資儀表板</div>
-        <div class="sec-sub">一頁整合股價走勢、財報趨勢與投資報酬率</div>
+        <div class="sec-sub" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span>一頁整合股價走勢、財報趨勢與投資報酬率</span>
+          <button onclick="refreshDashboardCharts();loadWatchlistData();loadMarketIndicators();"
+            style="background:var(--panel);border:1px solid var(--b0);border-radius:7px;padding:4px 12px;font-size:11px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+            重新載入
+          </button>
+          <span id="dashLastUpdate" style="font-size:10.5px;color:var(--t3);font-family:var(--mono);"></span>
+        </div>
       </div>
       <div class="sec-body">
 
@@ -802,10 +810,10 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
         </div>
 
         <div class="dash-grid">
-          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1">—</div><div class="kpi-val" id="kpiS1">—</div><div class="kpi-chg" id="kpiChgS1">載入中...</div></div>
-          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2">—</div><div class="kpi-val" id="kpiS2">—</div><div class="kpi-chg" id="kpiChgS2">載入中...</div></div>
-          <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII">—</div><div class="kpi-chg" id="kpiChgTWII">載入中...</div></div>
-          <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP">—</div><div class="kpi-chg" id="kpiChgSP">載入中...</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1">—</div><div class="kpi-val" id="kpiS1">—</div><div class="kpi-chg" id="kpiChgS1" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2">—</div><div class="kpi-val" id="kpiS2">—</div><div class="kpi-chg" id="kpiChgS2" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII">—</div><div class="kpi-chg" id="kpiChgTWII" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP">—</div><div class="kpi-chg" id="kpiChgSP" style="color:var(--t3)">—</div></div>
         </div>
         <div class="charts-row">
           <div class="chart-card">
@@ -1703,7 +1711,18 @@ document.querySelectorAll('.ni').forEach(btn=>{
     document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('sec-'+btn.dataset.section).classList.add('active');
-    if(btn.dataset.section==='dashboard') initCharts();
+    if(btn.dataset.section==='dashboard') {
+      // Always reload data when entering dashboard
+      loadWatchlistData();
+      loadMarketIndicators();
+      // Reset charts if data changed
+      if (!chartsInited) {
+        initCharts();
+      } else {
+        // Re-render charts with latest data
+        refreshDashboardCharts();
+      }
+    }
     if(btn.dataset.section==='macro' && !macroDataCache) setTimeout(loadMacroData, 100);
   });
 });
@@ -1867,6 +1886,15 @@ function copyTemplate(idx){navigator.clipboard.writeText(templates[idx].prompt);
 let chartsInited = false;
 let chartInstances = {};
 
+async function refreshDashboardCharts() {
+  // Destroy existing charts and re-render
+  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
+  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
+  if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
+  chartsInited = false;
+  await initCharts();
+}
+
 async function initCharts() {
   if (chartsInited) return;
   chartsInited = true;
@@ -1932,7 +1960,10 @@ async function initCharts() {
         </div>`;
       }).join('');
       const now = new Date();
-      document.getElementById('holdLastUpdate').textContent = '更新 '+now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+      const nowStr = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('holdLastUpdate').textContent = '更新 '+nowStr;
+      const dashEl = document.getElementById('dashLastUpdate');
+      if (dashEl) dashEl.textContent = '最後更新 '+nowStr;
     }
   } catch {}
 
