@@ -383,29 +383,40 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 /* ── 手機：底部 Tab 導覽 ── */
 @media (max-width: 768px) {
   html, body { overflow: hidden; }
-  body { grid-template-rows: 48px 1fr 58px; }
+  body { grid-template-rows: 48px 1fr 62px; }
   .app-body { grid-template-columns: 1fr; }
 
   .app-nav {
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 58px;
+    height: 62px;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: flex-start;
     align-items: center;
-    padding: 0 2px;
+    padding: 0 4px;
     border-top: 1px solid var(--b0);
     border-right: none;
     z-index: 500;
-    overflow-x: auto;
+    overflow-x: scroll;
     overflow-y: hidden;
-    gap: 0;
+    gap: 2px;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
   }
   .app-nav::-webkit-scrollbar { display: none; }
   .nav-sep { display: none; }
-  .ni { width: auto; min-width: 40px; height: 54px; flex: 1; border-radius: 8px; padding: 4px 2px; }
-  .ni-label { font-size: 8px; }
+  .ni {
+    width: 56px;
+    min-width: 56px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    height: 56px;
+    border-radius: 8px;
+    padding: 5px 2px;
+    scroll-snap-align: start;
+  }
+  .ni-label { font-size: 8.5px; }
   .chat-wrap { grid-template-columns: 1fr !important; }
   .sidebar, .right-panel { display: none !important; }
   .ticker-bar { display: none; }
@@ -418,6 +429,26 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
   .form-grid { grid-template-columns: 1fr; }
   .form-grid.cols-3 { grid-template-columns: 1fr; }
   .tmpl-grid { grid-template-columns: 1fr; }
+
+  /* Active indicator dot on mobile */
+  .ni.active::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    width: 16px; height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* iPhone safe area */
+  .app-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(62px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Model switcher compact on mobile */
+  .model-switcher { margin-right: 4px; }
+  .model-btn { padding: 3px 7px; font-size: 10px; }
   .messages { padding: 16px; }
   .input-zone { padding: 10px 12px 12px; }
 }
