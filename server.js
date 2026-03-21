@@ -210,7 +210,14 @@ app.get('/api/ticker', async (_req, res) => {
     try {
       const batch = await yf.quote(TICKER_LIST.map(t => t.sym), {}, YFO);
       arr = Array.isArray(batch) ? batch : [batch];
-      if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0)) throw new Error('empty');
+      if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0)) {
+        await warmupYahooFinance();
+        await new Promise(r => setTimeout(r, 2000));
+        const retry = await yf.quote(TICKER_LIST.map(t => t.sym), {}, YFO);
+        arr = Array.isArray(retry) ? retry : [retry];
+        if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0))
+          throw new Error('ticker returned empty prices after retry');
+      }
     } catch {
       arr = await Promise.all(
         TICKER_LIST.map(t => yf.quote(t.sym, {}, YFO).catch(() => ({})))
@@ -290,7 +297,15 @@ app.get('/api/watchlist', async (_req, res) => {
       arr = Array.isArray(batch) ? batch : [batch];
       // Validate we got real data (not all zeros)
       const hasRealData = arr.some(q => (q.regularMarketPrice ?? 0) > 0);
-      if (!hasRealData) throw new Error('batch returned empty prices');
+      if (!hasRealData) {
+        // Wait for crumb to init and retry
+        await warmupYahooFinance();
+        await new Promise(r => setTimeout(r, 2000));
+        const retry = await yf.quote(WATCHLIST.map(w => w.sym), {}, YFO);
+        arr = Array.isArray(retry) ? retry : [retry];
+        if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0))
+          throw new Error('batch returned empty prices after retry');
+      }
     } catch (batchErr) {
       console.warn('watchlist batch failed, falling back to individual:', batchErr.message);
       arr = await Promise.all(
@@ -333,8 +348,8 @@ app.get('/api/chart/:symbol', async (req, res) => {
   const now   = Math.floor(Date.now() / 1000);
   const start = now - days * 86400;
 
-  // Retry helper
-  async function fetchWithRetry(attempts = 2) {
+  // Retry helper with warm-up attempt
+  async function fetchWithRetry(attempts = 3) {
     for (let i = 0; i < attempts; i++) {
       try {
         const raw = await yf.historical(symbol, {
@@ -343,9 +358,14 @@ app.get('/api/chart/:symbol', async (req, res) => {
           interval,
         }, YFO);
         if (raw && raw.length > 0) return raw;
+        // Got empty array — wait and try again
+        if (i < attempts - 1) {
+          await warmupYahooFinance();
+          await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+        }
       } catch (err) {
         if (i === attempts - 1) throw err;
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        await new Promise(r => setTimeout(r, 1500 * (i + 1)));
       }
     }
     return [];
@@ -1249,4 +1269,29 @@ app.post('/api/monthly', async (req, res) => {
 });
 
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.listen(PORT, () => console.log(`🚀 智投 AI — http://localhost:${PORT}`));
+// ── Startup: warm up Yahoo Finance crumb before taking requests ──
+async function warmupYahooFinance() {
+  try {
+    console.log('Warming up Yahoo Finance crumb...');
+    await yf.quote('AAPL', {}, YFO);
+    console.log('Yahoo Finance ready.');
+  } catch (e) {
+    console.warn('Yahoo Finance warm-up failed (will retry on first request):', e.message);
+  }
+}
+
+app.listen(PORT, async () => {
+  console.log(`🚀 智投 AI — http://localhost:${PORT}`);
+  // Warm up crumb so first user requests don't get 0 prices
+  await warmupYahooFinance();
+  // Pre-populate cache
+  try {
+    const quotes = await yf.quote(['2330.TW','2454.TW','^TWII','^VIX','^GSPC'], {}, YFO);
+    const arr = Array.isArray(quotes) ? quotes : [quotes];
+    if (arr.some(q => (q.regularMarketPrice ?? 0) > 0)) {
+      console.log('Cache pre-warmed:', arr.map(q => `${q.symbol}:${q.regularMarketPrice}`).join(', '));
+    }
+  } catch (e) {
+    console.warn('Pre-warm cache failed:', e.message);
+  }
+});

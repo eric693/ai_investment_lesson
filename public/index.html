@@ -809,11 +809,11 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
           </div>
         </div>
 
-        <div class="dash-grid">
-          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1">—</div><div class="kpi-val" id="kpiS1">—</div><div class="kpi-chg" id="kpiChgS1" style="color:var(--t3)">—</div></div>
-          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2">—</div><div class="kpi-val" id="kpiS2">—</div><div class="kpi-chg" id="kpiChgS2" style="color:var(--t3)">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII">—</div><div class="kpi-chg" id="kpiChgTWII" style="color:var(--t3)">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP">—</div><div class="kpi-chg" id="kpiChgSP" style="color:var(--t3)">—</div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1" style="min-height:16px;">股票 1</div><div class="kpi-val" id="kpiS1" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgS1" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2" style="min-height:16px;">股票 2</div><div class="kpi-val" id="kpiS2" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgS2" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgTWII" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgSP" style="color:var(--t3)">—</div></div>
         </div>
         <div class="charts-row">
           <div class="chart-card">
@@ -1611,6 +1611,26 @@ async function loadWatchlistData() {
       if (kc2)  { kc2.textContent = (s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc2.className='kpi-chg '+(s.up?'up':'dn'); }
     }
 
+    // Also pull TWII + SP from ticker for dashboard KPIs
+    try {
+      const ticker = await fetch('/api/ticker').then(r => r.json());
+      if (Array.isArray(ticker)) {
+        const twii = ticker.find(t => t.ticker === '^TWII');
+        const sp   = ticker.find(t => t.ticker === '^GSPC');
+        const fmt  = (p) => p >= 1000 ? p.toLocaleString('zh-TW',{maximumFractionDigits:0}) : p?.toFixed(2);
+        if (twii && twii.price > 0) {
+          const kv = document.getElementById('kpiTWII'), kc = document.getElementById('kpiChgTWII');
+          if (kv) { kv.textContent = fmt(twii.price); kv.className = 'kpi-val '+(twii.up?'up':'dn'); }
+          if (kc) { kc.textContent = (twii.up?'▲':'▼')+Math.abs(twii.change).toFixed(2)+'%'; kc.className = 'kpi-chg '+(twii.up?'up':'dn'); }
+        }
+        if (sp && sp.price > 0) {
+          const kv = document.getElementById('kpiSP'), kc = document.getElementById('kpiChgSP');
+          if (kv) { kv.textContent = fmt(sp.price); kv.className = 'kpi-val '+(sp.up?'up':'dn'); }
+          if (kc) { kc.textContent = (sp.up?'▲':'▼')+Math.abs(sp.change).toFixed(2)+'%'; kc.className = 'kpi-chg '+(sp.up?'up':'dn'); }
+        }
+      }
+    } catch {}
+
     return data;
   } catch (e) { console.warn('watchlist load failed', e.message); }
 }
@@ -1618,9 +1638,30 @@ async function loadWatchlistData() {
 // Keep backward-compatible alias
 async function loadWatchlist() { return loadWatchlistData(); }
 
-// Init on load
+// Init on load — with retry if server just woke up from sleep
 loadWatchlistEditorInputs();
-loadWatchlist();
+
+async function loadWithRetry() {
+  await loadWatchlistData();
+  // If prices still 0 after 4 seconds, retry (server warming up)
+  setTimeout(async () => {
+    const kv = document.getElementById('kpiS1');
+    if (!kv || kv.textContent === '—' || kv.textContent.includes('0.0')) {
+      console.log('Prices still 0, retrying...');
+      await loadWatchlistData();
+    }
+  }, 4000);
+  // Final retry at 10s for Render cold start
+  setTimeout(async () => {
+    const kv = document.getElementById('kpiS1');
+    if (!kv || kv.textContent === '—' || kv.textContent.includes('0.0')) {
+      console.log('Final retry...');
+      await loadWatchlistData();
+      initCharts();
+    }
+  }, 10000);
+}
+loadWithRetry();
 setInterval(loadWatchlist, 60_000);
 
 /* ═══════════════════════════
