@@ -1753,15 +1753,11 @@ document.querySelectorAll('.ni').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('sec-'+btn.dataset.section).classList.add('active');
     if(btn.dataset.section==='dashboard') {
-      // Always reload data when entering dashboard
-      loadWatchlistData();
       loadMarketIndicators();
-      // Reset charts if data changed
       if (!chartsInited) {
-        initCharts();
+        initCharts(); // initCharts calls loadWatchlistData internally
       } else {
-        // Re-render charts with latest data
-        refreshDashboardCharts();
+        refreshDashboardCharts(); // refreshDashboardCharts calls initCharts
       }
     }
     if(btn.dataset.section==='macro' && !macroDataCache) setTimeout(loadMacroData, 100);
@@ -1928,11 +1924,11 @@ let chartsInited = false;
 let chartInstances = {};
 
 async function refreshDashboardCharts() {
-  // Destroy existing charts and re-render
   if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
   if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
   if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
   chartsInited = false;
+  await loadMarketIndicators(); // also refresh TWII + SP KPIs
   await initCharts();
 }
 
@@ -1972,10 +1968,17 @@ async function initCharts() {
     }
   } catch (e) { console.warn('portfolio chart failed', e.message); }
 
-  // ── 2. Allocation donut from custom watchlist ─────
+  // ── 2 & 3. Load watchlist ONCE for both alloc chart + holdings table ──
+  let dashWatchlist = null;
+  try { dashWatchlist = await loadWatchlistData(); } catch {}
+  if (!dashWatchlist || dashWatchlist.length === 0) {
+    try { dashWatchlist = await fetch('/api/watchlist').then(r=>r.json()); } catch {}
+  }
+
+  // ── 2. Allocation donut ─────
   try {
-    const wl = await loadWatchlistData() || await fetch('/api/watchlist').then(r=>r.json());
-    if (Array.isArray(wl)) {
+    const wl = dashWatchlist;
+    if (Array.isArray(wl) && wl.length > 0) {
       const sectors = {};
       wl.forEach(s => { const k = s.sector||s.sym||s.code||'其他'; sectors[k] = (sectors[k]||0) + (s.price||0); });
       const labels = Object.keys(sectors);
@@ -1986,12 +1989,12 @@ async function initCharts() {
         options: { ...baseOpts, plugins:{ legend:{ position:'bottom', labels:{ color:tickColor, font:{size:10}, boxWidth:10, padding:8 } } }, cutout:'65%' },
       });
     }
-  } catch {}
+  } catch(e) { console.warn('alloc chart:', e.message); }
 
-  // ── 3. Holdings real-time table (custom) ────────────
+  // ── 3. Holdings real-time table ────────────
   try {
-    const wl = await loadWatchlistData() || await fetch('/api/watchlist').then(r=>r.json());
-    if (Array.isArray(wl)) {
+    const wl = dashWatchlist;
+    if (Array.isArray(wl) && wl.length > 0) {
       document.getElementById('holdingsTable').innerHTML = wl.map(s => {
         const price = s.price != null ? (s.price>=1000?s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}):s.price.toFixed(1)) : '—';
         const pct   = s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
