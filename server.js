@@ -206,17 +206,29 @@ app.get('/api/ticker', async (_req, res) => {
   const cached = getCache('ticker');
   if (cached) return res.json(cached);
   try {
-    const quotes = await yf.quote(TICKER_LIST.map(t => t.sym), {}, YFO);
-    const arr    = Array.isArray(quotes) ? quotes : [quotes];
+    let arr;
+    try {
+      const batch = await yf.quote(TICKER_LIST.map(t => t.sym), {}, YFO);
+      arr = Array.isArray(batch) ? batch : [batch];
+      if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0)) throw new Error('empty');
+    } catch {
+      arr = await Promise.all(
+        TICKER_LIST.map(t => yf.quote(t.sym, {}, YFO).catch(() => ({})))
+      );
+    }
     const result = arr.map((q, i) => ({
-      sym: TICKER_LIST[i]?.label || q.symbol, ticker: q.symbol,
+      sym:    TICKER_LIST[i]?.label || q.symbol || '—',
+      ticker: q.symbol || TICKER_LIST[i]?.sym,
       price:  q.regularMarketPrice ?? 0,
       change: q.regularMarketChangePercent ?? 0,
       up:     (q.regularMarketChangePercent ?? 0) >= 0,
     }));
-    setCache('ticker', result, 60_000);
+    if (result.some(r => r.price > 0)) setCache('ticker', result, 60_000);
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('ticker:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 const WATCHLIST = [
@@ -271,8 +283,21 @@ app.get('/api/watchlist', async (_req, res) => {
   const cached = getCache('watchlist');
   if (cached) return res.json(cached);
   try {
-    const quotes = await yf.quote(WATCHLIST.map(w => w.sym), {}, YFO);
-    const arr    = Array.isArray(quotes) ? quotes : [quotes];
+    // Fetch one by one if batch fails (more reliable on cold start)
+    let arr;
+    try {
+      const batch = await yf.quote(WATCHLIST.map(w => w.sym), {}, YFO);
+      arr = Array.isArray(batch) ? batch : [batch];
+      // Validate we got real data (not all zeros)
+      const hasRealData = arr.some(q => (q.regularMarketPrice ?? 0) > 0);
+      if (!hasRealData) throw new Error('batch returned empty prices');
+    } catch (batchErr) {
+      console.warn('watchlist batch failed, falling back to individual:', batchErr.message);
+      arr = await Promise.all(
+        WATCHLIST.map(w => yf.quote(w.sym, {}, YFO).catch(() => ({})))
+      );
+    }
+
     const result = arr.map((q, i) => ({
       ...WATCHLIST[i],
       price:   q.regularMarketPrice ?? 0,
@@ -284,9 +309,14 @@ app.get('/api/watchlist', async (_req, res) => {
       week52H: q.fiftyTwoWeekHigh ?? null,
       week52L: q.fiftyTwoWeekLow  ?? null,
     }));
-    setCache('watchlist', result, 60_000);
+
+    const anyPriceLoaded = result.some(r => r.price > 0);
+    if (anyPriceLoaded) setCache('watchlist', result, 60_000);
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('watchlist:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/chart/:symbol', async (req, res) => {
@@ -295,17 +325,49 @@ app.get('/api/chart/:symbol', async (req, res) => {
   const k = `chart:${symbol}:${period}:${interval}`;
   const cached = getCache(k);
   if (cached) return res.json(cached);
+
+  const dayMap = { '1mo':30,'3mo':90,'6mo':180,'1y':365,'2y':730,'5y':1825 };
+  const days   = dayMap[period] || 180;
+
+  // Use unix timestamps (more reliable than Date objects with yahoo-finance2)
+  const now   = Math.floor(Date.now() / 1000);
+  const start = now - days * 86400;
+
+  // Retry helper
+  async function fetchWithRetry(attempts = 2) {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const raw = await yf.historical(symbol, {
+          period1: start,
+          period2: now,
+          interval,
+        }, YFO);
+        if (raw && raw.length > 0) return raw;
+      } catch (err) {
+        if (i === attempts - 1) throw err;
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      }
+    }
+    return [];
+  }
+
   try {
-    const days = { '1mo':30,'3mo':90,'6mo':180,'1y':365,'2y':730,'5y':1825 };
-    const p1   = new Date(); p1.setDate(p1.getDate() - (days[period] || 180));
-    const raw  = await yf.historical(symbol, { period1: p1, interval }, YFO);
-    const result = raw.map(d => ({
-      date: d.date.toISOString().split('T')[0],
-      open: d.open, high: d.high, low: d.low, close: d.close, volume: d.volume,
-    }));
-    setCache(k, result, 300_000);
+    const raw    = await fetchWithRetry(3);
+    const result = (raw || []).map(d => ({
+      date:   d.date instanceof Date ? d.date.toISOString().split('T')[0] : String(d.date).split('T')[0],
+      open:   d.open   ?? null,
+      high:   d.high   ?? null,
+      low:    d.low    ?? null,
+      close:  d.close  ?? null,
+      volume: d.volume ?? null,
+    })).filter(d => d.close !== null);
+
+    if (result.length > 0) setCache(k, result, 300_000);
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error(`chart ${symbol}:`, e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/twse/market', async (_req, res) => {
