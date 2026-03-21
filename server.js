@@ -247,43 +247,40 @@ const WATCHLIST = [
 ];
 
 app.get('/api/custom-watchlist', async (req, res) => {
-  // Accept ?sym=2330.TW&sym=AAPL&sym=...
   let syms = req.query.sym;
   if (!syms) return res.json([]);
   if (!Array.isArray(syms)) syms = [syms];
 
-  // Normalize: 4-digit → add .TW, already has dot → keep, else keep as-is
   syms = syms.slice(0, 5).map(s => {
     s = s.toUpperCase().trim();
     if (/^\d{4}$/.test(s)) return s + '.TW';
     return s;
   });
 
-  try {
-    const quotes = await yf.quote(syms, {}, YFO);
-    const arr    = Array.isArray(quotes) ? quotes : [quotes];
-    const result = arr.map((q, i) => {
-      const sym  = syms[i] || q.symbol;
-      const code = sym.replace('.TW','');
-      return {
-        sym,
-        code,
-        name:    q.shortName || q.longName || code,
-        sector:  q.sector    || code,
-        price:   q.regularMarketPrice ?? 0,
-        change:  q.regularMarketChangePercent ?? 0,
-        up:      (q.regularMarketChangePercent ?? 0) >= 0,
-        volume:  q.regularMarketVolume ?? 0,
-        pe:      q.trailingPE ?? null,
-        mktCap:  q.marketCap  ?? null,
-        week52H: q.fiftyTwoWeekHigh ?? null,
-        week52L: q.fiftyTwoWeekLow  ?? null,
-      };
-    });
-    res.json(result);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  const settled = await Promise.allSettled(syms.map(s => yf.quote(s, {}, YFO)));
+  const result  = settled.map((r, i) => {
+    const sym  = syms[i];
+    const code = sym.replace(/\.(TW|TWO)$/i, '');
+    if (r.status === 'rejected' || !r.value)
+      return { sym, code, name: code, sector: '—', price: null, change: null, up: false, volume: null, pe: null, mktCap: null, week52H: null, week52L: null };
+    const q = r.value;
+    return {
+      sym, code,
+      name:    q.shortName || q.longName || code,
+      sector:  q.sector    || '—',
+      price:   q.regularMarketPrice   ?? null,
+      change:  q.regularMarketChangePercent ?? null,
+      up:      (q.regularMarketChangePercent ?? 0) >= 0,
+      volume:  q.regularMarketVolume  ?? null,
+      pe:      q.trailingPE           ?? null,
+      mktCap:  q.marketCap            ?? null,
+      week52H: q.fiftyTwoWeekHigh     ?? null,
+      week52L: q.fiftyTwoWeekLow      ?? null,
+    };
+  });
+
+  if (result.some(r => r.price > 0)) setCache('cw:' + syms.join(','), result, 60_000);
+  res.json(result);
 });
 
 app.get('/api/watchlist', async (_req, res) => {
@@ -335,7 +332,8 @@ app.get('/api/watchlist', async (_req, res) => {
 });
 
 app.get('/api/chart/:symbol', async (req, res) => {
-  const { symbol } = req.params;
+  let symbol = req.params.symbol;
+  try { symbol = decodeURIComponent(symbol); } catch {}
   const period   = req.query.period   || '6mo';
   const interval = req.query.interval || '1d';
   const k = `chart:${symbol}:${period}:${interval}`;

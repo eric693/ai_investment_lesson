@@ -1521,10 +1521,14 @@ function applyCustomWatchlist() {
   saveCustomWatchlist(codes);
 
   // Reset charts so they reload with new data
+  ['portfolio','alloc','perf'].forEach(k => {
+    if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch {} delete chartInstances[k]; }
+  });
+  ['portfolioChart','allocationChart','perfChart'].forEach(id => {
+    const old = document.getElementById(id);
+    if (old) { const fresh = document.createElement('canvas'); fresh.id = id; old.parentNode.replaceChild(fresh, old); }
+  });
   chartsInited = false;
-  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
-  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
-  if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
 
   const status = document.getElementById('wlSaveStatus');
   status.textContent = '已儲存';
@@ -1540,9 +1544,14 @@ function resetCustomWatchlist() {
     const el = document.getElementById('wlc' + (i+1));
     if (el) el.value = DEFAULT_WATCHLIST[i] || '';
   }
+  ['portfolio','alloc','perf'].forEach(k => {
+    if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch {} delete chartInstances[k]; }
+  });
+  ['portfolioChart','allocationChart','perfChart'].forEach(id => {
+    const old = document.getElementById(id);
+    if (old) { const fresh = document.createElement('canvas'); fresh.id = id; old.parentNode.replaceChild(fresh, old); }
+  });
   chartsInited = false;
-  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
-  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
 
   const status = document.getElementById('wlSaveStatus');
   status.textContent = '已重置';
@@ -1924,11 +1933,16 @@ let chartsInited = false;
 let chartInstances = {};
 
 async function refreshDashboardCharts() {
-  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
-  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
-  if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
+  // destroy + replace canvas，避免 "Canvas is already in use" 錯誤
+  ['portfolio','alloc','perf'].forEach(k => {
+    if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch {} delete chartInstances[k]; }
+  });
+  ['portfolioChart','allocationChart','perfChart'].forEach(id => {
+    const old = document.getElementById(id);
+    if (old) { const fresh = document.createElement('canvas'); fresh.id = id; old.parentNode.replaceChild(fresh, old); }
+  });
   chartsInited = false;
-  await loadMarketIndicators(); // also refresh TWII + SP KPIs
+  await loadMarketIndicators();
   await initCharts();
 }
 
@@ -2013,7 +2027,7 @@ async function initCharts() {
 
   // ── 4. Monthly performance bar (TWII monthly) ─
   try {
-    const hist = await fetch('/api/chart/%5ETWII?period=6mo&interval=1mo').then(r=>r.json());
+    const hist = await fetch('/api/chart/' + encodeURIComponent('^TWII') + '?period=6mo&interval=1mo').then(r=>r.json());
     if (Array.isArray(hist) && hist.length) {
       const labels = hist.map(h => h.date.slice(0,7));
       const vals   = hist.map(h => h.close && hist[0].close ? ((h.close-hist[0].close)/hist[0].close*100) : 0);
