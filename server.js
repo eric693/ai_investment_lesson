@@ -227,6 +227,46 @@ const WATCHLIST = [
   { sym: '2412.TW', code: '2412', name: '中華電', sector: '電信'      },
 ];
 
+app.get('/api/custom-watchlist', async (req, res) => {
+  // Accept ?sym=2330.TW&sym=AAPL&sym=...
+  let syms = req.query.sym;
+  if (!syms) return res.json([]);
+  if (!Array.isArray(syms)) syms = [syms];
+
+  // Normalize: 4-digit → add .TW, already has dot → keep, else keep as-is
+  syms = syms.slice(0, 5).map(s => {
+    s = s.toUpperCase().trim();
+    if (/^\d{4}$/.test(s)) return s + '.TW';
+    return s;
+  });
+
+  try {
+    const quotes = await yf.quote(syms, {}, YFO);
+    const arr    = Array.isArray(quotes) ? quotes : [quotes];
+    const result = arr.map((q, i) => {
+      const sym  = syms[i] || q.symbol;
+      const code = sym.replace('.TW','');
+      return {
+        sym,
+        code,
+        name:    q.shortName || q.longName || code,
+        sector:  q.sector    || code,
+        price:   q.regularMarketPrice ?? 0,
+        change:  q.regularMarketChangePercent ?? 0,
+        up:      (q.regularMarketChangePercent ?? 0) >= 0,
+        volume:  q.regularMarketVolume ?? 0,
+        pe:      q.trailingPE ?? null,
+        mktCap:  q.marketCap  ?? null,
+        week52H: q.fiftyTwoWeekHigh ?? null,
+        week52L: q.fiftyTwoWeekLow  ?? null,
+      };
+    });
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/watchlist', async (_req, res) => {
   const cached = getCache('watchlist');
   if (cached) return res.json(cached);

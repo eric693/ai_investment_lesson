@@ -507,6 +507,25 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 .ev-pos{color:var(--green);}
 .ev-neg{color:var(--red);}
 
+/* ── Custom Watchlist Editor ── */
+.wl-editor-wrap{background:var(--surface);border:1px solid var(--b0);border-radius:12px;padding:16px;margin-bottom:16px;}
+.wl-editor-title{font-size:12px;font-weight:600;color:var(--t2);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.wl-editor-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;}
+@media(max-width:600px){.wl-editor-grid{grid-template-columns:repeat(2,1fr);}}
+.wl-input-wrap{display:flex;flex-direction:column;gap:4px;}
+.wl-input-label{font-size:9.5px;color:var(--t3);font-family:var(--mono);letter-spacing:.06em;}
+.wl-input{background:var(--panel);border:1px solid var(--b0);border-radius:7px;padding:7px 9px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;width:100%;transition:border-color .12s;}
+.wl-input:focus{border-color:var(--a-dim);}
+.wl-input::placeholder{color:var(--t3);}
+.wl-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.wl-apply-btn{background:var(--accent);border:none;border-radius:7px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:background .12s;}
+.wl-apply-btn:hover:not(:disabled){background:#5a9af8;}
+.wl-apply-btn:disabled{opacity:.4;}
+.wl-reset-btn{background:var(--panel);border:1px solid var(--b0);border-radius:7px;padding:7px 12px;color:var(--t2);font-size:12px;cursor:pointer;transition:all .12s;}
+.wl-reset-btn:hover{border-color:var(--b1);color:var(--text);}
+.wl-hint{font-size:11px;color:var(--t3);line-height:1.5;}
+.wl-status{font-size:11px;color:var(--green);margin-left:auto;font-family:var(--mono);}
+
 /* ── Metric Cards (backtest + macro) ── */
 .metrics-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
 .metric-card{background:var(--surface);border:1px solid var(--b0);border-radius:10px;padding:14px 12px;text-align:center;}
@@ -761,17 +780,38 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
         <div class="sec-sub">一頁整合股價走勢、財報趨勢與投資報酬率</div>
       </div>
       <div class="sec-body">
+
+        <!-- Custom Watchlist Editor -->
+        <div class="wl-editor-wrap">
+          <div class="wl-editor-title">
+            <span>自訂自選股（最多 5 檔）</span>
+            <span class="wl-status" id="wlSaveStatus"></span>
+          </div>
+          <div class="wl-editor-grid">
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 1</div><input class="wl-input" id="wlc1" placeholder="例：2330" maxlength="6"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 2</div><input class="wl-input" id="wlc2" placeholder="例：2454" maxlength="6"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 3</div><input class="wl-input" id="wlc3" placeholder="例：2317" maxlength="6"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 4</div><input class="wl-input" id="wlc4" placeholder="例：3231" maxlength="6"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 5</div><input class="wl-input" id="wlc5" placeholder="例：2412" maxlength="6"></div>
+          </div>
+          <div class="wl-actions">
+            <button class="wl-apply-btn" id="wlApplyBtn" onclick="applyCustomWatchlist()">套用並重新載入</button>
+            <button class="wl-reset-btn" onclick="resetCustomWatchlist()">恢復預設</button>
+            <div class="wl-hint">輸入台股 4 碼代號，美股輸入完整代號如 AAPL、NVDA</div>
+          </div>
+        </div>
+
         <div class="dash-grid">
-          <div class="kpi-card"><div class="kpi-label">台積電 2330</div><div class="kpi-val" id="kpi2330">—</div><div class="kpi-chg" id="kpiChg2330">載入中...</div></div>
-          <div class="kpi-card"><div class="kpi-label">聯發科 2454</div><div class="kpi-val" id="kpi2454">—</div><div class="kpi-chg" id="kpiChg2454">載入中...</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1">—</div><div class="kpi-val" id="kpiS1">—</div><div class="kpi-chg" id="kpiChgS1">載入中...</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2">—</div><div class="kpi-val" id="kpiS2">—</div><div class="kpi-chg" id="kpiChgS2">載入中...</div></div>
           <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII">—</div><div class="kpi-chg" id="kpiChgTWII">載入中...</div></div>
           <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP">—</div><div class="kpi-chg" id="kpiChgSP">載入中...</div></div>
         </div>
         <div class="charts-row">
           <div class="chart-card">
-            <div class="chart-card-title">
-              <span>投資組合淨值走勢（近 6 個月）</span>
-              <span style="color:var(--green);font-size:11px;">▲ +12.8%</span>
+            <div class="chart-card-title" id="mainChartTitle">
+              <span>股價走勢（近 6 個月）</span>
+              <span id="mainChartChg" style="font-size:11px;"></span>
             </div>
             <div class="chart-wrap"><canvas id="portfolioChart"></canvas></div>
           </div>
@@ -782,7 +822,7 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
         </div>
         <div class="holdings-row">
           <div class="holdings-card">
-            <div class="chart-card-title"><span>即時股價</span><span id="holdLastUpdate" style="font-size:10px;color:var(--t3)"></span></div>
+            <div class="chart-card-title"><span>自選股即時報價</span><span id="holdLastUpdate" style="font-size:10px;color:var(--t3)"></span></div>
             <div id="holdingsTable">
               <div style="padding:20px 0;text-align:center;color:var(--t3);font-size:12px;">載入即時資料中...</div>
             </div>
@@ -1436,22 +1476,104 @@ loadTicker();
 setInterval(loadTicker, 60_000); // refresh every 60s
 
 /* ═══════════════════════════
+   CUSTOM WATCHLIST
+═══════════════════════════ */
+const DEFAULT_WATCHLIST = ['2330','2454','2317','3231','2412'];
+
+function getCustomWatchlist() {
+  try {
+    const saved = localStorage.getItem('customWatchlist');
+    if (saved) {
+      const arr = JSON.parse(saved);
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+    }
+  } catch {}
+  return DEFAULT_WATCHLIST;
+}
+
+function saveCustomWatchlist(codes) {
+  try { localStorage.setItem('customWatchlist', JSON.stringify(codes)); } catch {}
+}
+
+function loadWatchlistEditorInputs() {
+  const codes = getCustomWatchlist();
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('wlc' + (i+1));
+    if (el) el.value = codes[i] || '';
+  }
+}
+
+function applyCustomWatchlist() {
+  const codes = [];
+  for (let i = 1; i <= 5; i++) {
+    const v = (document.getElementById('wlc'+i)?.value || '').trim().toUpperCase();
+    if (v) codes.push(v);
+  }
+  if (codes.length === 0) return;
+  saveCustomWatchlist(codes);
+
+  // Reset charts so they reload with new data
+  chartsInited = false;
+  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
+  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
+  if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
+
+  const status = document.getElementById('wlSaveStatus');
+  status.textContent = '已儲存';
+  setTimeout(() => { status.textContent = ''; }, 2000);
+
+  loadWatchlistData();
+  initCharts();
+}
+
+function resetCustomWatchlist() {
+  try { localStorage.removeItem('customWatchlist'); } catch {}
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('wlc' + (i+1));
+    if (el) el.value = DEFAULT_WATCHLIST[i] || '';
+  }
+  chartsInited = false;
+  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
+  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
+
+  const status = document.getElementById('wlSaveStatus');
+  status.textContent = '已重置';
+  setTimeout(() => { status.textContent = ''; }, 2000);
+
+  loadWatchlistData();
+  initCharts();
+}
+
+/* ═══════════════════════════
    REAL DATA — WATCHLIST
 ═══════════════════════════ */
-async function loadWatchlist() {
+async function loadWatchlistData() {
+  // Build query string from custom list
+  const codes = getCustomWatchlist();
+  const syms  = codes.map(c => /\./.test(c) ? c : (/^\d{4}$/.test(c) ? c+'.TW' : c));
+  const query = syms.map(s => 'sym='+encodeURIComponent(s)).join('&');
+
   try {
-    const data = await fetch('/api/watchlist').then(r => r.json());
+    // Use custom endpoint or default based on codes
+    const isDefault = JSON.stringify(codes) === JSON.stringify(DEFAULT_WATCHLIST);
+    const data = isDefault
+      ? await fetch('/api/watchlist').then(r => r.json())
+      : await fetch('/api/custom-watchlist?' + query).then(r => r.json());
+
     if (!Array.isArray(data)) return;
 
+    // ── Sidebar watchlist ──
     document.getElementById('watchlistItems').innerHTML = data.map(s => {
       const price = s.price != null
         ? (s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1))
         : '—';
       const pct   = s.change != null ? (s.up ? '+' : '') + s.change.toFixed(2) + '%' : '—';
       const cls   = s.up ? 'up' : 'dn';
-      const prompt = `請根據最新資料分析${s.name}（${s.code}）的投資價值，包含技術面與基本面`;
+      const name  = s.name || s.sym || s.code || '—';
+      const code  = s.code || s.sym?.replace('.TW','') || '—';
+      const prompt = `請根據最新資料分析 ${name}（${code}）的投資價值，包含技術面與基本面`;
       return `<div class="watch-item" onclick="sendQuick('${prompt}')">
-        <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">${s.code}</div><div class="w-name">${s.name}</div></div></div>
+        <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">${code}</div><div class="w-name">${name}</div></div></div>
         <div class="w-right"><div class="w-price">${price}</div><div class="w-chg ${cls}">${pct}</div></div>
       </div>`;
     }).join('');
@@ -1459,21 +1581,37 @@ async function loadWatchlist() {
     const now = new Date();
     document.getElementById('wlLastUpdate').textContent = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
 
-    // Also update dashboard KPIs if they exist
-    const map = { '^TWII': 'kpiTWII', '^GSPC': 'kpiSP' };
-    // We need to find 2330 and 2454 from watchlist
-    data.forEach(s => {
-      const idVal = { '2330.TW':'kpi2330','2454.TW':'kpi2454' }[s.sym];
-      const idChg = { '2330.TW':'kpiChg2330','2454.TW':'kpiChg2454' }[s.sym];
-      if (idVal) {
-        const el = document.getElementById(idVal);
-        const ec = document.getElementById(idChg);
-        if (el) { el.textContent = 'NT$' + (s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1)); el.className = 'kpi-val ' + (s.up?'up':'dn'); }
-        if (ec) { ec.textContent = (s.up?'▲':'▼') + ' ' + Math.abs(s.change).toFixed(2) + '%'; ec.className = 'kpi-chg ' + (s.up?'up':'dn'); }
-      }
-    });
+    // ── Dashboard KPI cards (first 2 stocks) ──
+    if (data[0]) {
+      const s = data[0];
+      const p = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price?.toFixed(1);
+      const lbl1 = document.getElementById('kpiLbl1');
+      const kv1  = document.getElementById('kpiS1');
+      const kc1  = document.getElementById('kpiChgS1');
+      if (lbl1) lbl1.textContent = (s.name||s.code||'—') + ' ' + (s.code||'');
+      if (kv1)  { kv1.textContent = 'NT$'+(p||'—'); kv1.className='kpi-val '+(s.up?'up':'dn'); }
+      if (kc1)  { kc1.textContent = (s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc1.className='kpi-chg '+(s.up?'up':'dn'); }
+    }
+    if (data[1]) {
+      const s = data[1];
+      const p = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price?.toFixed(1);
+      const lbl2 = document.getElementById('kpiLbl2');
+      const kv2  = document.getElementById('kpiS2');
+      const kc2  = document.getElementById('kpiChgS2');
+      if (lbl2) lbl2.textContent = (s.name||s.code||'—') + ' ' + (s.code||'');
+      if (kv2)  { kv2.textContent = 'NT$'+(p||'—'); kv2.className='kpi-val '+(s.up?'up':'dn'); }
+      if (kc2)  { kc2.textContent = (s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc2.className='kpi-chg '+(s.up?'up':'dn'); }
+    }
+
+    return data;
   } catch (e) { console.warn('watchlist load failed', e.message); }
 }
+
+// Keep backward-compatible alias
+async function loadWatchlist() { return loadWatchlistData(); }
+
+// Init on load
+loadWatchlistEditorInputs();
 loadWatchlist();
 setInterval(loadWatchlist, 60_000);
 
@@ -1737,11 +1875,13 @@ async function initCharts() {
   const tickColor = '#8897ae';
   const baseOpts  = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } };
 
-  // ── 1. 台積電 6mo line chart ───────────────
+  // ── 1. Custom first stock 6mo line chart ──
   try {
-    const hist = await fetch('/api/chart/2330.TW?period=6mo&interval=1d').then(r=>r.json());
+    const codes   = getCustomWatchlist();
+    const firstSym = /\./.test(codes[0]) ? codes[0] : (/^\d{4}$/.test(codes[0]) ? codes[0]+'.TW' : codes[0]);
+    const hist = await fetch('/api/chart/'+encodeURIComponent(firstSym)+'?period=6mo&interval=1d').then(r=>r.json());
     if (Array.isArray(hist) && hist.length) {
-      const labels = hist.map(h => h.date.slice(5)); // MM-DD
+      const labels = hist.map(h => h.date.slice(5));
       const vals   = hist.map(h => h.close);
       const grad   = document.getElementById('portfolioChart').getContext('2d').createLinearGradient(0,0,0,200);
       grad.addColorStop(0,'rgba(61,130,246,0.35)');
@@ -1754,22 +1894,21 @@ async function initCharts() {
           y: { grid:{ color:gridColor }, ticks:{ color:tickColor, font:{size:10}, callback:v=>v.toLocaleString() } }
         }},
       });
-
-      // Update chart title with real info
-      const last   = vals[vals.length-1];
-      const first  = vals[0];
-      const chg    = ((last-first)/first*100).toFixed(2);
-      const el     = document.querySelector('.charts-row .chart-card .chart-card-title');
-      if (el) el.innerHTML = `<span>台積電 6 個月走勢</span><span style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'▲':'▼'} ${Math.abs(chg)}%</span>`;
+      const last = vals[vals.length-1], first = vals[0];
+      const chg  = ((last-first)/first*100).toFixed(2);
+      const titleEl = document.getElementById('mainChartTitle');
+      const chgEl   = document.getElementById('mainChartChg');
+      if (titleEl) titleEl.querySelector('span').textContent = codes[0] + ' 6 個月走勢';
+      if (chgEl)   { chgEl.textContent = (chg>=0?'▲':'▼')+' '+Math.abs(chg)+'%'; chgEl.style.color = chg>=0?'var(--green)':'var(--red)'; }
     }
   } catch (e) { console.warn('portfolio chart failed', e.message); }
 
-  // ── 2. Allocation donut from watchlist ─────
+  // ── 2. Allocation donut from custom watchlist ─────
   try {
-    const wl = await fetch('/api/watchlist').then(r=>r.json());
+    const wl = await loadWatchlistData() || await fetch('/api/watchlist').then(r=>r.json());
     if (Array.isArray(wl)) {
       const sectors = {};
-      wl.forEach(s => { sectors[s.sector] = (sectors[s.sector]||0) + (s.price||0); });
+      wl.forEach(s => { const k = s.sector||s.sym||s.code||'其他'; sectors[k] = (sectors[k]||0) + (s.price||0); });
       const labels = Object.keys(sectors);
       const values = Object.values(sectors);
       chartInstances.alloc = new Chart(document.getElementById('allocationChart'), {
@@ -1780,9 +1919,9 @@ async function initCharts() {
     }
   } catch {}
 
-  // ── 3. Holdings real-time table ────────────
+  // ── 3. Holdings real-time table (custom) ────────────
   try {
-    const wl = await fetch('/api/watchlist').then(r=>r.json());
+    const wl = await loadWatchlistData() || await fetch('/api/watchlist').then(r=>r.json());
     if (Array.isArray(wl)) {
       document.getElementById('holdingsTable').innerHTML = wl.map(s => {
         const price = s.price != null ? (s.price>=1000?s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}):s.price.toFixed(1)) : '—';
