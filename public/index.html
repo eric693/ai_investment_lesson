@@ -79,7 +79,7 @@ header{
 .ni.active svg{stroke:var(--accent);}
 
 /* ── MAIN CONTENT ── */
-.app-main{overflow:hidden;display:grid;}
+.app-main{overflow:hidden;display:grid;position:relative;}
 
 /* All sections hidden by default */
 .sec{display:none;height:100%;overflow:hidden;}
@@ -200,7 +200,7 @@ header{
 .sec-header{padding:20px 28px 0;flex-shrink:0;}
 .sec-title{font-size:18px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px;}
 .sec-sub{font-size:12.5px;color:var(--t2);}
-.sec-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 28px;scrollbar-width:thin;scrollbar-color:var(--b0) transparent;}
+.sec-body{flex:1;overflow-y:auto;min-height:0;padding:20px 28px;scrollbar-width:thin;scrollbar-color:var(--b0) transparent;}
 .sec-body::-webkit-scrollbar{width:4px;}
 .sec-body::-webkit-scrollbar-thumb{background:var(--b0);border-radius:2px;}
 
@@ -322,37 +322,9 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 .kw{color:#c678dd;}.fn{color:#61afef;}.str{color:#98c379;}.cm{color:var(--t3);font-style:italic;}.num{color:#d19a66;}.op{color:var(--t2);}
 
 /* Monthly */
-/* 修正月摘要 hero 區塊在桌機版的顯示問題 */
-.month-hero {
-  background: linear-gradient(135deg, #0f1e40, #111827);
-  border: 1px solid var(--b1);
-  border-radius: 14px;
-  padding: 28px;
-  text-align: center;
-  margin-bottom: 20px;
-  /* 新增以下兩行 */
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.month-sel {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 18px;
-  flex-wrap: wrap;
-  /* 新增以下一行 */
-  max-width: 100%;
-}
-
-.month-hero-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  margin-bottom: 6px;
-  /* 新增以下一行，防止文字溢出 */
-  word-break: break-word;
-}
+.month-hero{background:linear-gradient(135deg,#0f1e40,#111827);border:1px solid var(--b1);border-radius:14px;padding:28px;text-align:center;margin-bottom:20px;}
+.month-hero-title{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;}
+.month-hero-sub{font-size:13px;color:var(--t2);}
 .month-sel{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
 .month-chip{background:var(--panel);border:1px solid var(--b0);border-radius:8px;padding:8px 16px;font-size:12.5px;color:var(--t2);cursor:pointer;transition:all .12s;}
 .month-chip:hover,.month-chip.active{border-color:var(--a-dim);color:var(--accent);background:var(--a-glow);}
@@ -1549,14 +1521,10 @@ function applyCustomWatchlist() {
   saveCustomWatchlist(codes);
 
   // Reset charts so they reload with new data
-  ['portfolio','alloc','perf'].forEach(k => {
-    if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch {} delete chartInstances[k]; }
-  });
-  ['portfolioChart','allocationChart','perfChart'].forEach(id => {
-    const old = document.getElementById(id);
-    if (old) { const fresh = document.createElement('canvas'); fresh.id = id; old.parentNode.replaceChild(fresh, old); }
-  });
   chartsInited = false;
+  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
+  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
+  if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
 
   const status = document.getElementById('wlSaveStatus');
   status.textContent = '已儲存';
@@ -1572,14 +1540,9 @@ function resetCustomWatchlist() {
     const el = document.getElementById('wlc' + (i+1));
     if (el) el.value = DEFAULT_WATCHLIST[i] || '';
   }
-  ['portfolio','alloc','perf'].forEach(k => {
-    if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch {} delete chartInstances[k]; }
-  });
-  ['portfolioChart','allocationChart','perfChart'].forEach(id => {
-    const old = document.getElementById(id);
-    if (old) { const fresh = document.createElement('canvas'); fresh.id = id; old.parentNode.replaceChild(fresh, old); }
-  });
   chartsInited = false;
+  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
+  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
 
   const status = document.getElementById('wlSaveStatus');
   status.textContent = '已重置';
@@ -1609,10 +1572,11 @@ async function loadWatchlistData() {
 
     // ── Sidebar watchlist ──
     document.getElementById('watchlistItems').innerHTML = data.map(s => {
-      const price = s.price != null
+      const hasPrice = s.price != null && s.price > 0;
+      const price = hasPrice
         ? (s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1))
         : '—';
-      const pct   = s.change != null ? (s.up ? '+' : '') + s.change.toFixed(2) + '%' : '—';
+      const pct   = hasPrice && s.change != null ? (s.up ? '+' : '') + s.change.toFixed(2) + '%' : '—';
       const cls   = s.up ? 'up' : 'dn';
       const name  = s.name || s.sym || s.code || '—';
       const code  = s.code || s.sym?.replace('.TW','') || '—';
@@ -1634,8 +1598,16 @@ async function loadWatchlistData() {
       const kv1  = document.getElementById('kpiS1');
       const kc1  = document.getElementById('kpiChgS1');
       if (lbl1) lbl1.textContent = (s.name||s.code||'—') + ' ' + (s.code||'');
-      if (kv1)  { kv1.textContent = 'NT$'+(p||'—'); kv1.className='kpi-val '+(s.up?'up':'dn'); }
-      if (kc1)  { kc1.textContent = (s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc1.className='kpi-chg '+(s.up?'up':'dn'); }
+      if (kv1)  {
+        if (s.price != null && s.price > 0) {
+          const px = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1);
+          kv1.textContent = 'NT$'+px; kv1.className='kpi-val '+(s.up?'up':'dn');
+          if (kc1) { kc1.textContent=(s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc1.className='kpi-chg '+(s.up?'up':'dn'); }
+        } else {
+          kv1.textContent = '—'; kv1.className='kpi-val'; kv1.style.color='var(--t3)';
+          if (kc1) { kc1.textContent='載入中...'; kc1.className='kpi-chg'; kc1.style.color='var(--t3)'; }
+        }
+      }
     }
     if (data[1]) {
       const s = data[1];
@@ -1644,8 +1616,16 @@ async function loadWatchlistData() {
       const kv2  = document.getElementById('kpiS2');
       const kc2  = document.getElementById('kpiChgS2');
       if (lbl2) lbl2.textContent = (s.name||s.code||'—') + ' ' + (s.code||'');
-      if (kv2)  { kv2.textContent = 'NT$'+(p||'—'); kv2.className='kpi-val '+(s.up?'up':'dn'); }
-      if (kc2)  { kc2.textContent = (s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc2.className='kpi-chg '+(s.up?'up':'dn'); }
+      if (kv2)  {
+        if (s.price != null && s.price > 0) {
+          const px = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1);
+          kv2.textContent = 'NT$'+px; kv2.className='kpi-val '+(s.up?'up':'dn');
+          if (kc2) { kc2.textContent=(s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc2.className='kpi-chg '+(s.up?'up':'dn'); }
+        } else {
+          kv2.textContent = '—'; kv2.className='kpi-val'; kv2.style.color='var(--t3)';
+          if (kc2) { kc2.textContent='載入中...'; kc2.className='kpi-chg'; kc2.style.color='var(--t3)'; }
+        }
+      }
     }
 
     // Also pull TWII + SP from ticker for dashboard KPIs
@@ -1679,25 +1659,24 @@ async function loadWatchlist() { return loadWatchlistData(); }
 loadWatchlistEditorInputs();
 
 async function loadWithRetry() {
-  await loadMarketIndicators();
   await loadWatchlistData();
-
-  // Render 冷啟動：積極重試，每 3 秒一次，最多 6 次
-  for (let i = 1; i <= 6; i++) {
-    await new Promise(r => setTimeout(r, 3000));
-    const kv = document.getElementById('kpiTWII');
-    const isZero = !kv || kv.textContent === '—' || kv.textContent === '0' || kv.textContent.includes('0.0');
-    if (!isZero) {
-      console.log('Data loaded after retry', i);
-      break;
+  // If prices still 0 after 4 seconds, retry (server warming up)
+  setTimeout(async () => {
+    const kv = document.getElementById('kpiS1');
+    if (!kv || kv.textContent === '—' || kv.textContent.includes('0.0')) {
+      console.log('Prices still 0, retrying...');
+      await loadWatchlistData();
     }
-    console.log(`Retry ${i}: prices still 0, retrying...`);
-    await loadMarketIndicators();
-    await loadWatchlistData();
-    if (i === 3 && !chartsInited) initCharts();
-  }
-
-  if (!chartsInited) initCharts();
+  }, 4000);
+  // Final retry at 10s for Render cold start
+  setTimeout(async () => {
+    const kv = document.getElementById('kpiS1');
+    if (!kv || kv.textContent === '—' || kv.textContent.includes('0.0')) {
+      console.log('Final retry...');
+      await loadWatchlistData();
+      initCharts();
+    }
+  }, 10000);
 }
 loadWithRetry();
 setInterval(loadWatchlist, 60_000);
@@ -1962,16 +1941,11 @@ let chartsInited = false;
 let chartInstances = {};
 
 async function refreshDashboardCharts() {
-  // destroy + replace canvas，避免 "Canvas is already in use" 錯誤
-  ['portfolio','alloc','perf'].forEach(k => {
-    if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch {} delete chartInstances[k]; }
-  });
-  ['portfolioChart','allocationChart','perfChart'].forEach(id => {
-    const old = document.getElementById(id);
-    if (old) { const fresh = document.createElement('canvas'); fresh.id = id; old.parentNode.replaceChild(fresh, old); }
-  });
+  if (chartInstances.portfolio) { chartInstances.portfolio.destroy(); delete chartInstances.portfolio; }
+  if (chartInstances.alloc)     { chartInstances.alloc.destroy();     delete chartInstances.alloc;     }
+  if (chartInstances.perf)      { chartInstances.perf.destroy();      delete chartInstances.perf;      }
   chartsInited = false;
-  await loadMarketIndicators();
+  await loadMarketIndicators(); // also refresh TWII + SP KPIs
   await initCharts();
 }
 
@@ -2039,11 +2013,13 @@ async function initCharts() {
     const wl = dashWatchlist;
     if (Array.isArray(wl) && wl.length > 0) {
       document.getElementById('holdingsTable').innerHTML = wl.map(s => {
-        const price = s.price != null ? (s.price>=1000?s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}):s.price.toFixed(1)) : '—';
-        const pct   = s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
+        const hasPrice = s.price != null && s.price > 0;
+        const price = hasPrice ? (s.price>=1000?s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}):s.price.toFixed(1)) : '—';
+        const pct   = hasPrice && s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
+        const priceClr = hasPrice ? '' : 'color:var(--t3);';
         return `<div class="holding-item">
           <div><div class="holding-sym">${s.code} ${s.name}</div><div class="holding-name">${s.sector}${s.pe?' ｜ P/E '+s.pe.toFixed(1):''}</div></div>
-          <div class="holding-val"><div class="holding-price">NT$${price}</div><div class="holding-pnl ${s.up?'up':'dn'}">${pct}</div></div>
+          <div class="holding-val"><div class="holding-price" style="${priceClr}">${hasPrice?'NT$':''}${price}</div><div class="holding-pnl ${s.up&&hasPrice?'up':'dn'}">${pct}</div></div>
         </div>`;
       }).join('');
       const now = new Date();
@@ -2056,7 +2032,7 @@ async function initCharts() {
 
   // ── 4. Monthly performance bar (TWII monthly) ─
   try {
-    const hist = await fetch('/api/chart/' + encodeURIComponent('^TWII') + '?period=6mo&interval=1mo').then(r=>r.json());
+    const hist = await fetch('/api/chart/%5ETWII?period=6mo&interval=1mo').then(r=>r.json());
     if (Array.isArray(hist) && hist.length) {
       const labels = hist.map(h => h.date.slice(0,7));
       const vals   = hist.map(h => h.close && hist[0].close ? ((h.close-hist[0].close)/hist[0].close*100) : 0);
@@ -2196,84 +2172,103 @@ function copyCode(btn){
 let macroDataCache = null;
 
 async function loadMacroData() {
+  const loadingEl = document.getElementById('macroLoading');
+  const cardsEl   = document.getElementById('macroCards');
+  const noticeEl  = document.getElementById('macroFredNotice');
+
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = '載入總經數據中...';
+  cardsEl.style.display = 'none';
+
   try {
     const data = await fetch('/api/macro').then(r => r.json());
     macroDataCache = data;
+    loadingEl.style.display = 'none';
 
-    document.getElementById('macroLoading').style.display = 'none';
-
-    if (!data.fredAvailable) {
-      document.getElementById('macroFredNotice').style.display = 'block';
+    // Always show FRED notice if no key
+    if (!data.fredAvailable && noticeEl) {
+      noticeEl.style.display = 'block';
     }
 
     const cards = [];
 
-    // VIX (always available)
-    if (data.vix) {
-      const vixVal = data.vix.value?.toFixed(2);
-      const vixLevel = data.vix.value < 15 ? '低恐慌' : data.vix.value < 25 ? '中度恐慌' : '高恐慌';
-      const vixClass = data.vix.value < 15 ? 'good' : data.vix.value < 25 ? 'warn' : 'bad';
+    // ── VIX（從 Yahoo Finance，應永遠可得）──
+    const vixVal = data.vix?.value;
+    if (vixVal != null && vixVal > 0) {
+      const vixLevel = vixVal < 15 ? '低恐慌' : vixVal < 25 ? '中度恐慌' : '高恐慌';
+      const vixColor = vixVal < 15 ? 'var(--green)' : vixVal < 25 ? 'var(--amber)' : 'var(--red)';
       cards.push(`<div class="macro-card">
         <div class="macro-card-lbl">VIX 恐慌指數</div>
-        <div class="macro-card-val" style="color:${vixClass==='good'?'var(--green)':vixClass==='warn'?'var(--amber)':'var(--red)'}">${vixVal}</div>
-        <div class="macro-card-prev">${vixLevel}｜漲跌 ${data.vix.change?.toFixed(2)}%</div>
+        <div class="macro-card-val" style="color:${vixColor}">${vixVal.toFixed(2)}</div>
+        <div class="macro-card-prev">${vixLevel}｜漲跌 ${(data.vix.change||0).toFixed(2)}%</div>
       </div>`);
-    }
-
-    // FRED data (if available)
-    if (data.fedRate?.[0]) {
-      const curr = parseFloat(data.fedRate[0].value);
-      const prev = parseFloat(data.fedRate[1]?.value || curr);
-      const trend = curr > prev ? '升息' : curr < prev ? '降息' : '持平';
+    } else {
+      // VIX failed — show placeholder with retry hint
       cards.push(`<div class="macro-card">
-        <div class="macro-card-lbl">聯邦基金利率</div>
-        <div class="macro-card-val">${curr}%</div>
-        <div class="macro-card-prev">前次 ${prev}%｜${trend}</div>
+        <div class="macro-card-lbl">VIX 恐慌指數</div>
+        <div class="macro-card-val" style="color:var(--t3)">—</div>
+        <div class="macro-card-prev" style="color:var(--t3)">資料載入中，請稍後點「AI 分析」</div>
       </div>`);
     }
 
-    if (data.cpi?.[0]) {
-      const curr = parseFloat(data.cpi[0].value);
-      const prev = parseFloat(data.cpi[1]?.value || curr);
-      const chgPct = ((curr - prev) / prev * 100).toFixed(2);
-      cards.push(`<div class="macro-card">
-        <div class="macro-card-lbl">CPI 消費者物價</div>
-        <div class="macro-card-val">${curr.toFixed(1)}</div>
-        <div class="macro-card-prev">月變動 ${chgPct}%｜${data.cpi[0].date}</div>
-      </div>`);
+    // ── FRED 數據（需要 FRED_API_KEY）──
+    const fredFields = [
+      { key: 'fedRate',      label: '聯邦基金利率', fmt: v => v+'%',
+        sub: (d,p) => `前次 ${p}%｜${parseFloat(d)>parseFloat(p)?'升息':parseFloat(d)<parseFloat(p)?'降息':'持平'}` },
+      { key: 'cpi',          label: 'CPI 消費者物價', fmt: v => parseFloat(v).toFixed(1),
+        sub: (d,p) => `月變動 ${((parseFloat(d)-parseFloat(p))/parseFloat(p)*100).toFixed(2)}%` },
+      { key: 'unemployment', label: '美國失業率', fmt: v => v+'%',
+        color: v => parseFloat(v)<4?'var(--green)':parseFloat(v)<6?'var(--amber)':'var(--red)',
+        sub: (d,p) => '' },
+      { key: 'treasury10y',  label: '10年期美債殖利率', fmt: v => v+'%', sub: (d,p) => '' },
+      { key: 'nfp',          label: '非農就業（千人）', fmt: v => parseFloat(v).toLocaleString(), sub: (d,p) => '' },
+    ];
+
+    if (data.fredAvailable) {
+      fredFields.forEach(f => {
+        const rows = data[f.key];
+        if (rows?.[0]) {
+          const curr = rows[0].value;
+          const prev = rows[1]?.value || curr;
+          const color = f.color ? f.color(curr) : 'var(--text)';
+          const sub   = f.sub ? f.sub(curr, prev) : '';
+          cards.push(`<div class="macro-card">
+            <div class="macro-card-lbl">${f.label}</div>
+            <div class="macro-card-val" style="color:${color}">${f.fmt(curr)}</div>
+            ${sub ? `<div class="macro-card-prev">${sub}${rows[0].date?' ｜ '+rows[0].date:''}</div>` : ''}
+          </div>`);
+        } else {
+          cards.push(`<div class="macro-card">
+            <div class="macro-card-lbl">${f.label}</div>
+            <div class="macro-card-val" style="color:var(--t3)">—</div>
+            <div class="macro-card-prev" style="color:var(--t3)">暫無資料</div>
+          </div>`);
+        }
+      });
+    } else {
+      // No FRED key — show placeholder cards with setup hint
+      fredFields.forEach(f => {
+        cards.push(`<div class="macro-card" style="opacity:.5;">
+          <div class="macro-card-lbl">${f.label}</div>
+          <div class="macro-card-val" style="color:var(--t3)">—</div>
+          <div class="macro-card-prev" style="color:var(--t3)">需設定 FRED_API_KEY</div>
+        </div>`);
+      });
     }
 
-    if (data.unemployment?.[0]) {
-      const curr = parseFloat(data.unemployment[0].value);
-      cards.push(`<div class="macro-card">
-        <div class="macro-card-lbl">美國失業率</div>
-        <div class="macro-card-val" style="color:${curr < 4 ? 'var(--green)' : curr < 6 ? 'var(--amber)' : 'var(--red)'}">${curr}%</div>
-        <div class="macro-card-prev">${data.unemployment[0].date}</div>
-      </div>`);
+    cardsEl.innerHTML = cards.join('');
+    cardsEl.style.display = 'grid';
+
+    if (cards.length === 0) {
+      loadingEl.textContent = '數據載入完成，請點「AI 分析總經環境」取得分析';
+      loadingEl.style.display = 'block';
     }
 
-    if (data.treasury10y?.[0]) {
-      const curr = parseFloat(data.treasury10y[0].value);
-      cards.push(`<div class="macro-card">
-        <div class="macro-card-lbl">10年期美債殖利率</div>
-        <div class="macro-card-val">${curr}%</div>
-        <div class="macro-card-prev">${data.treasury10y[0].date}</div>
-      </div>`);
-    }
-
-    if (data.nfp?.[0]) {
-      const curr = parseFloat(data.nfp[0].value);
-      cards.push(`<div class="macro-card">
-        <div class="macro-card-lbl">非農就業（千人）</div>
-        <div class="macro-card-val">${curr.toLocaleString()}</div>
-        <div class="macro-card-prev">${data.nfp[0].date}</div>
-      </div>`);
-    }
-
-    document.getElementById('macroCards').innerHTML = cards.join('');
-    document.getElementById('macroCards').style.display = 'grid';
   } catch (e) {
-    document.getElementById('macroLoading').textContent = '數據載入失敗，請稍後重試';
+    console.error('loadMacroData:', e.message);
+    loadingEl.textContent = '數據載入失敗（' + e.message + '）請點「重新載入數據」再試';
+    loadingEl.style.display = 'block';
+    cardsEl.style.display = 'none';
   }
 }
 
