@@ -200,7 +200,7 @@ header{
 .sec-header{padding:20px 28px 0;flex-shrink:0;}
 .sec-title{font-size:18px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px;}
 .sec-sub{font-size:12.5px;color:var(--t2);}
-.sec-body{flex:1;overflow-y:auto;padding:20px 28px;scrollbar-width:thin;scrollbar-color:var(--b0) transparent;}
+.sec-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 28px;scrollbar-width:thin;scrollbar-color:var(--b0) transparent;}
 .sec-body::-webkit-scrollbar{width:4px;}
 .sec-body::-webkit-scrollbar-thumb{background:var(--b0);border-radius:2px;}
 
@@ -322,9 +322,37 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
 .kw{color:#c678dd;}.fn{color:#61afef;}.str{color:#98c379;}.cm{color:var(--t3);font-style:italic;}.num{color:#d19a66;}.op{color:var(--t2);}
 
 /* Monthly */
-.month-hero{background:linear-gradient(135deg,#0f1e40,#111827);border:1px solid var(--b1);border-radius:14px;padding:28px;text-align:center;margin-bottom:20px;}
-.month-hero-title{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;}
-.month-hero-sub{font-size:13px;color:var(--t2);}
+/* 修正月摘要 hero 區塊在桌機版的顯示問題 */
+.month-hero {
+  background: linear-gradient(135deg, #0f1e40, #111827);
+  border: 1px solid var(--b1);
+  border-radius: 14px;
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 20px;
+  /* 新增以下兩行 */
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.month-sel {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
+  /* 新增以下一行 */
+  max-width: 100%;
+}
+
+.month-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: 6px;
+  /* 新增以下一行，防止文字溢出 */
+  word-break: break-word;
+}
 .month-sel{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
 .month-chip{background:var(--panel);border:1px solid var(--b0);border-radius:8px;padding:8px 16px;font-size:12.5px;color:var(--t2);cursor:pointer;transition:all .12s;}
 .month-chip:hover,.month-chip.active{border-color:var(--a-dim);color:var(--accent);background:var(--a-glow);}
