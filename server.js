@@ -202,36 +202,70 @@ const TICKER_LIST = [
   { sym: 'USDTWD=X',label: 'USD/TWD' },
 ];
 
+/* ── Direct Yahoo Finance v8 chart API (more reliable than quote batch) ── */
+async function fetchYFPrice(sym) {
+  const HEADERS = {
+    'User-Agent':    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept':        'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Origin':        'https://finance.yahoo.com',
+    'Referer':       'https://finance.yahoo.com/',
+  };
+  const enc  = encodeURIComponent(sym);
+  const path = `v8/finance/chart/${enc}?interval=1d&range=5d&includePrePost=false`;
+
+  // Try query1, then query2 as fallback
+  for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
+    try {
+      const r = await fetch(`https://${host}/${path}`, {
+        headers: HEADERS,
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const meta = d?.chart?.result?.[0]?.meta;
+      if (!meta || !meta.regularMarketPrice) continue;
+      const price  = meta.regularMarketPrice;
+      const prev   = meta.chartPreviousClose  || meta.previousClose || price;
+      const change = prev > 0 ? ((price - prev) / prev * 100) : 0;
+      return { price, change, up: change >= 0, symbol: sym, shortName: meta.shortName || meta.symbol || sym };
+    } catch (e) {
+      console.warn(`fetchYFPrice ${sym} via ${host}:`, e.message);
+    }
+  }
+
+  // Final fallback: yf library (uses its own crumb management)
+  try {
+    const q = await yf.quote(sym, {}, YFO);
+    const price  = q.regularMarketPrice ?? 0;
+    const change = q.regularMarketChangePercent ?? 0;
+    if (price > 0) return { price, change, up: change >= 0, symbol: sym, shortName: q.shortName || sym };
+  } catch {}
+
+  return { price: 0, change: 0, up: true, symbol: sym, shortName: sym };
+}
+
 app.get('/api/ticker', async (_req, res) => {
   const cached = getCache('ticker');
   if (cached) return res.json(cached);
   try {
-    let arr;
-    try {
-      const batch = await yf.quote(TICKER_LIST.map(t => t.sym), {}, YFO);
-      arr = Array.isArray(batch) ? batch : [batch];
-      if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0)) {
-        await warmupYahooFinance();
-        await new Promise(r => setTimeout(r, 2000));
-        const retry = await yf.quote(TICKER_LIST.map(t => t.sym), {}, YFO);
-        arr = Array.isArray(retry) ? retry : [retry];
-        if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0))
-          throw new Error('ticker returned empty prices after retry');
-      }
-    } catch {
-      arr = await Promise.all(
-        TICKER_LIST.map(t => yf.quote(t.sym, {}, YFO).catch(() => ({})))
-      );
-    }
-    const result = arr.map((q, i) => ({
-      sym:    TICKER_LIST[i]?.label || q.symbol || '—',
-      ticker: q.symbol || TICKER_LIST[i]?.sym,
-      price:  q.regularMarketPrice ?? 0,
-      change: q.regularMarketChangePercent ?? 0,
-      up:     (q.regularMarketChangePercent ?? 0) >= 0,
-    }));
-    if (result.some(r => r.price > 0)) setCache('ticker', result, 60_000);
-    res.json(result);
+    // Fetch all in parallel using direct HTTP
+    const results = await Promise.all(
+      TICKER_LIST.map(async (t) => {
+        const q = await fetchYFPrice(t.sym);
+        return {
+          sym:    t.label,
+          ticker: t.sym,
+          price:  q.price,
+          change: q.change,
+          up:     q.up,
+        };
+      })
+    );
+    const hasData = results.some(r => r.price > 0);
+    console.log('ticker:', results.map(r => `${r.sym}:${r.price}`).join(', '));
+    if (hasData) setCache('ticker', results, 60_000);
+    res.json(results);
   } catch (e) {
     console.error('ticker:', e.message);
     res.status(500).json({ error: e.message });
@@ -246,88 +280,114 @@ const WATCHLIST = [
   { sym: '2412.TW', code: '2412', name: '中華電', sector: '電信'      },
 ];
 
+/* ═══════════════════════════════════════════
+   DEBUG — inspect raw Yahoo Finance response
+═══════════════════════════════════════════ */
+app.get('/api/debug', async (req, res) => {
+  const sym = req.query.sym || '2330.TW';
+  const result = { sym, timestamp: new Date().toISOString() };
+  try {
+    // Test single quote
+    const q = await yf.quote(sym, {}, YFO);
+    result.quote = {
+      symbol:              q.symbol,
+      regularMarketPrice:  q.regularMarketPrice,
+      regularMarketChange: q.regularMarketChange,
+      regularMarketChangePercent: q.regularMarketChangePercent,
+      marketState:         q.marketState,
+      quoteType:           q.quoteType,
+      shortName:           q.shortName,
+    };
+  } catch (e) { result.quoteError = e.message; }
+
+  try {
+    // Test chart endpoint
+    const r = await yf.chart(sym, { range: '5d', interval: '1d' }, YFO);
+    const quotes = r?.quotes || [];
+    result.chart = {
+      length: quotes.length,
+      firstRow: quotes[0] || null,
+      lastRow:  quotes[quotes.length - 1] || null,
+    };
+  } catch (e) { result.chartError = e.message; }
+
+  try {
+    // Test historical
+    const p1 = new Date(); p1.setDate(p1.getDate() - 7);
+    const h = await yf.historical(sym, { period1: p1, interval: '1d' }, YFO);
+    result.historical = {
+      length: h?.length || 0,
+      firstRow: h?.[0] || null,
+    };
+  } catch (e) { result.historicalError = e.message; }
+
+  res.json(result);
+});
+
 app.get('/api/custom-watchlist', async (req, res) => {
+  // Accept ?sym=2330.TW&sym=AAPL&sym=...
   let syms = req.query.sym;
   if (!syms) return res.json([]);
   if (!Array.isArray(syms)) syms = [syms];
 
+  // Normalize: 4-digit → add .TW, already has dot → keep, else keep as-is
   syms = syms.slice(0, 5).map(s => {
     s = s.toUpperCase().trim();
     if (/^\d{4}$/.test(s)) return s + '.TW';
     return s;
   });
 
-  // ← 補上 cache 讀取
-  const ckey = 'cw:' + syms.join(',');
-  const cached = getCache(ckey);
-  if (cached) return res.json(cached);
-
-  const settled = await Promise.allSettled(syms.map(s => yf.quote(s, {}, YFO)));
-  const result  = settled.map((r, i) => {
-    const sym  = syms[i];
-    const code = sym.replace(/\.(TW|TWO)$/i, '');
-    if (r.status === 'rejected' || !r.value)
-      return { sym, code, name: code, sector: '—', price: null, change: null, up: false, volume: null, pe: null, mktCap: null, week52H: null, week52L: null };
-    const q = r.value;
-    return {
-      sym, code,
-      name:    q.shortName || q.longName || code,
-      sector:  q.sector    || '—',
-      price:   q.regularMarketPrice   ?? null,
-      change:  q.regularMarketChangePercent ?? null,
-      up:      (q.regularMarketChangePercent ?? 0) >= 0,
-      volume:  q.regularMarketVolume  ?? null,
-      pe:      q.trailingPE           ?? null,
-      mktCap:  q.marketCap            ?? null,
-      week52H: q.fiftyTwoWeekHigh     ?? null,
-      week52L: q.fiftyTwoWeekLow      ?? null,
-    };
-  });
-
-  if (result.some(r => r.price > 0)) setCache(ckey, result, 60_000);
-  res.json(result);
+  try {
+    const quotes = await yf.quote(syms, {}, YFO);
+    const arr    = Array.isArray(quotes) ? quotes : [quotes];
+    const result = await Promise.all(syms.map(async (sym) => {
+      const code = sym.replace('.TW','');
+      const q = await fetchYFPrice(sym);
+      const price  = q.price  > 0 ? q.price  : null;
+      const change = q.price  > 0 ? q.change : null;
+      let name = code, sector = code, pe = null, mktCap = null, week52H = null, week52L = null;
+      try {
+        const detail = await yf.quote(sym, {}, YFO);
+        name    = detail.shortName || detail.longName || code;
+        sector  = detail.sector    || code;
+        pe      = detail.trailingPE       ?? null;
+        mktCap  = detail.marketCap        ?? null;
+        week52H = detail.fiftyTwoWeekHigh ?? null;
+        week52L = detail.fiftyTwoWeekLow  ?? null;
+      } catch {}
+      return { sym, code, name, sector, price, change, up: change != null ? change >= 0 : true, pe, mktCap, week52H, week52L };
+    }));
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
+
 app.get('/api/watchlist', async (_req, res) => {
   const cached = getCache('watchlist');
   if (cached) return res.json(cached);
   try {
-    // Fetch one by one if batch fails (more reliable on cold start)
-    let arr;
-    try {
-      const batch = await yf.quote(WATCHLIST.map(w => w.sym), {}, YFO);
-      arr = Array.isArray(batch) ? batch : [batch];
-      // Validate we got real data (not all zeros)
-      const hasRealData = arr.some(q => (q.regularMarketPrice ?? 0) > 0);
-      if (!hasRealData) {
-        // Wait for crumb to init and retry
-        await warmupYahooFinance();
-        await new Promise(r => setTimeout(r, 2000));
-        const retry = await yf.quote(WATCHLIST.map(w => w.sym), {}, YFO);
-        arr = Array.isArray(retry) ? retry : [retry];
-        if (!arr.some(q => (q.regularMarketPrice ?? 0) > 0))
-          throw new Error('batch returned empty prices after retry');
-      }
-    } catch (batchErr) {
-      console.warn('watchlist batch failed, falling back to individual:', batchErr.message);
-      arr = await Promise.all(
-        WATCHLIST.map(w => yf.quote(w.sym, {}, YFO).catch(() => ({})))
-      );
-    }
-
-    const result = arr.map((q, i) => ({
-      ...WATCHLIST[i],
-      price:   q.regularMarketPrice ?? 0,
-      change:  q.regularMarketChangePercent ?? 0,
-      up:      (q.regularMarketChangePercent ?? 0) >= 0,
-      volume:  q.regularMarketVolume ?? 0,
-      pe:      q.trailingPE ?? null,
-      mktCap:  q.marketCap  ?? null,
-      week52H: q.fiftyTwoWeekHigh ?? null,
-      week52L: q.fiftyTwoWeekLow  ?? null,
+    // Use direct HTTP for price + yf library for fundamentals
+    const result = await Promise.all(WATCHLIST.map(async (w) => {
+      const q = await fetchYFPrice(w.sym);
+      const price  = q.price  > 0 ? q.price  : null;
+      const change = q.price  > 0 ? q.change : null;
+      // Try to get PE from yf library (non-critical)
+      let pe = null, mktCap = null, week52H = null, week52L = null;
+      try {
+        const detail = await yf.quote(w.sym, {}, YFO);
+        pe      = detail.trailingPE       ?? null;
+        mktCap  = detail.marketCap        ?? null;
+        week52H = detail.fiftyTwoWeekHigh ?? null;
+        week52L = detail.fiftyTwoWeekLow  ?? null;
+      } catch {}
+      console.log(`watchlist ${w.sym}: price=${price}`);
+      return { ...w, price, change, up: change != null ? change >= 0 : true, pe, mktCap, week52H, week52L };
     }));
 
-    const anyPriceLoaded = result.some(r => r.price > 0);
-    if (anyPriceLoaded) setCache('watchlist', result, 60_000);
+    const anyPrice = result.some(r => r.price != null && r.price > 0);
+    if (anyPrice) setCache('watchlist', result, 60_000);
+    console.log('watchlist:', result.map(r => `${r.code}:${r.price}`).join(', '));
     res.json(result);
   } catch (e) {
     console.error('watchlist:', e.message);
@@ -336,8 +396,7 @@ app.get('/api/watchlist', async (_req, res) => {
 });
 
 app.get('/api/chart/:symbol', async (req, res) => {
-  let symbol = req.params.symbol;
-  try { symbol = decodeURIComponent(symbol); } catch {}
+  const { symbol } = req.params;
   const period   = req.query.period   || '6mo';
   const interval = req.query.interval || '1d';
   const k = `chart:${symbol}:${period}:${interval}`;
@@ -1329,39 +1388,38 @@ app.post('/api/monthly', async (req, res) => {
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 // ── Startup: warm up Yahoo Finance crumb before taking requests ──
 async function warmupYahooFinance() {
-  for (let attempt = 1; attempt <= 8; attempt++) {
-    try {
-      console.log(`Warming up YF attempt ${attempt}...`);
-      const q = await yf.quote('AAPL', {}, YFO);
-      if (q?.regularMarketPrice > 0) {
-        console.log('YF ready, AAPL:', q.regularMarketPrice);
-        return true;
-      }
-    } catch (e) {
-      console.warn(`warmup ${attempt} failed:`, e.message);
+  try {
+    console.log('Warming up Yahoo Finance...');
+    // Test direct HTTP API first (primary method)
+    const test = await fetchYFPrice('AAPL');
+    if (test.price > 0) {
+      console.log(`Yahoo Finance HTTP ready. AAPL: ${test.price}`);
+    } else {
+      // Fallback: try yf library crumb init
+      await yf.quote('AAPL', {}, YFO);
+      console.log('Yahoo Finance library ready.');
     }
-    await new Promise(r => setTimeout(r, 2000));
+  } catch (e) {
+    console.warn('Yahoo Finance warm-up failed:', e.message);
   }
-  console.warn('YF warmup gave up after 8 attempts');
-  return false;
 }
 
 app.listen(PORT, async () => {
   console.log(`🚀 智投 AI — http://localhost:${PORT}`);
+  // Warm up crumb so first user requests don't get 0 prices
   await warmupYahooFinance();
-  // Pre-populate cache 等 warmup 確實完成
-  for (let i = 0; i < 3; i++) {
-    try {
-      const quotes = await yf.quote(['2330.TW','2454.TW','^TWII','^VIX','^GSPC'], {}, YFO);
-      const arr = Array.isArray(quotes) ? quotes : [quotes];
-      if (arr.some(q => (q.regularMarketPrice ?? 0) > 0)) {
-        console.log('Cache pre-warmed:', arr.map(q => `${q.symbol}:${q.regularMarketPrice}`).join(', '));
-        break;
-      }
-      await new Promise(r => setTimeout(r, 2000));
-    } catch (e) {
-      console.warn('Pre-warm attempt failed:', e.message);
-      await new Promise(r => setTimeout(r, 2000));
+  // Pre-populate cache using direct HTTP
+  try {
+    const preWarm = await Promise.all(
+      ['2330.TW','2454.TW','^TWII','^VIX','^GSPC'].map(s => fetchYFPrice(s))
+    );
+    const hasData = preWarm.some(q => q.price > 0);
+    if (hasData) {
+      console.log('Cache pre-warmed:', preWarm.map(q => `${q.symbol}:${q.price}`).join(', '));
+    } else {
+      console.warn('Pre-warm: all prices 0, will retry on first request');
     }
+  } catch (e) {
+    console.warn('Pre-warm cache failed:', e.message);
   }
 });
