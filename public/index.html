@@ -795,12 +795,12 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
             <span>自訂自選股（最多 5 檔）</span>
             <span class="wl-status" id="wlSaveStatus"></span>
           </div>
-          <div class="wl-editor-grid">
-            <div class="wl-input-wrap"><div class="wl-input-label">股票 1</div><input class="wl-input" id="wlc1" placeholder="例：2330" maxlength="6"></div>
-            <div class="wl-input-wrap"><div class="wl-input-label">股票 2</div><input class="wl-input" id="wlc2" placeholder="例：2454" maxlength="6"></div>
-            <div class="wl-input-wrap"><div class="wl-input-label">股票 3</div><input class="wl-input" id="wlc3" placeholder="例：2317" maxlength="6"></div>
-            <div class="wl-input-wrap"><div class="wl-input-label">股票 4</div><input class="wl-input" id="wlc4" placeholder="例：3231" maxlength="6"></div>
-            <div class="wl-input-wrap"><div class="wl-input-label">股票 5</div><input class="wl-input" id="wlc5" placeholder="例：2412" maxlength="6"></div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;min-width:0;">
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 1</div><input class="wl-input" id="wlc1" placeholder="2330" maxlength="8"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 2</div><input class="wl-input" id="wlc2" placeholder="2454" maxlength="8"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 3</div><input class="wl-input" id="wlc3" placeholder="2317" maxlength="8"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 4</div><input class="wl-input" id="wlc4" placeholder="3231" maxlength="8"></div>
+            <div class="wl-input-wrap"><div class="wl-input-label">股票 5</div><input class="wl-input" id="wlc5" placeholder="2412" maxlength="8"></div>
           </div>
           <div class="wl-actions">
             <button class="wl-apply-btn" id="wlApplyBtn" onclick="applyCustomWatchlist()">套用並重新載入</button>
@@ -809,12 +809,13 @@ pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--t2);white
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
-          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1" style="min-height:16px;">股票 1</div><div class="kpi-val" id="kpiS1" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgS1" style="color:var(--t3)">—</div></div>
-          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2" style="min-height:16px;">股票 2</div><div class="kpi-val" id="kpiS2" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgS2" style="color:var(--t3)">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">台加權指數</div><div class="kpi-val" id="kpiTWII" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgTWII" style="color:var(--t3)">—</div></div>
+        <div id="dashKpiGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl1">台加權</div><div class="kpi-val" id="kpiTWII" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgTWII" style="color:var(--t3)">—</div></div>
           <div class="kpi-card"><div class="kpi-label">S&amp;P 500</div><div class="kpi-val" id="kpiSP" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgSP" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl2">VIX</div><div class="kpi-val" id="kpiVIX" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgVIX" style="color:var(--t3)">—</div></div>
+          <div class="kpi-card"><div class="kpi-label" id="kpiLbl3">USD/TWD</div><div class="kpi-val" id="kpiUSD" style="color:var(--t3)">—</div><div class="kpi-chg" id="kpiChgUSD" style="color:var(--t3)">—</div></div>
         </div>
+        <div id="dashStocksGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;"></div>
         <div class="charts-row">
           <div class="chart-card">
             <div class="chart-card-title" id="mainChartTitle">
@@ -1555,101 +1556,72 @@ function resetCustomWatchlist() {
 /* ═══════════════════════════
    REAL DATA — WATCHLIST
 ═══════════════════════════ */
+function fmtPrice(p) {
+  if (p == null || p <= 0) return null;
+  return p >= 1000 ? p.toLocaleString('zh-TW',{maximumFractionDigits:0}) : p.toFixed(2);
+}
+function updateKpi(valId, chgId, price, change, up, prefix='') {
+  const kv = document.getElementById(valId);
+  const kc = document.getElementById(chgId);
+  const p  = fmtPrice(price);
+  if (!kv) return;
+  if (p) {
+    kv.textContent = prefix + p; kv.className = 'kpi-val ' + (up?'up':'dn');
+    if (kc) { kc.textContent=(up?'▲':'▼')+' '+Math.abs(change||0).toFixed(2)+'%'; kc.className='kpi-chg '+(up?'up':'dn'); kc.style.color=''; }
+  } else {
+    kv.textContent='—'; kv.className='kpi-val'; kv.style.color='var(--t3)';
+    if (kc) { kc.textContent='—'; kc.style.color='var(--t3)'; }
+  }
+}
+
 async function loadWatchlistData() {
-  // Build query string from custom list
   const codes = getCustomWatchlist();
   const syms  = codes.map(c => /\./.test(c) ? c : (/^\d{4}$/.test(c) ? c+'.TW' : c));
   const query = syms.map(s => 'sym='+encodeURIComponent(s)).join('&');
 
   try {
-    // Use custom endpoint or default based on codes
     const isDefault = JSON.stringify(codes) === JSON.stringify(DEFAULT_WATCHLIST);
     const data = isDefault
-      ? await fetch('/api/watchlist').then(r => r.json())
-      : await fetch('/api/custom-watchlist?' + query).then(r => r.json());
-
+      ? await fetch('/api/watchlist').then(r=>r.json())
+      : await fetch('/api/custom-watchlist?'+query).then(r=>r.json());
     if (!Array.isArray(data)) return;
 
     // ── Sidebar watchlist ──
     document.getElementById('watchlistItems').innerHTML = data.map(s => {
       const hasPrice = s.price != null && s.price > 0;
-      const price = hasPrice
-        ? (s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1))
-        : '—';
-      const pct   = hasPrice && s.change != null ? (s.up ? '+' : '') + s.change.toFixed(2) + '%' : '—';
-      const cls   = s.up ? 'up' : 'dn';
-      const name  = s.name || s.sym || s.code || '—';
-      const code  = s.code || s.sym?.replace('.TW','') || '—';
+      const price = fmtPrice(s.price) || '—';
+      const pct   = hasPrice && s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
+      const name  = s.name||s.sym||s.code||'—';
+      const code  = s.code||s.sym?.replace('.TW','')||'—';
       const prompt = `請根據最新資料分析 ${name}（${code}）的投資價值，包含技術面與基本面`;
-      return `<div class="watch-item" onclick="sendQuick('${prompt}')">
+      return `<div class="watch-item" onclick="sendQuick('${prompt.replace(/'/g,"\'")}')">
         <div class="w-left"><div class="w-bar"></div><div><div class="w-sym">${code}</div><div class="w-name">${name}</div></div></div>
-        <div class="w-right"><div class="w-price">${price}</div><div class="w-chg ${cls}">${pct}</div></div>
+        <div class="w-right"><div class="w-price">${price}</div><div class="w-chg ${s.up?'up':'dn'}">${pct}</div></div>
       </div>`;
     }).join('');
 
     const now = new Date();
-    document.getElementById('wlLastUpdate').textContent = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    const nowStr = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('wlLastUpdate').textContent = nowStr;
+    const dashEl = document.getElementById('dashLastUpdate');
+    if (dashEl) dashEl.textContent = '更新 '+nowStr;
 
-    // ── Dashboard KPI cards (first 2 stocks) ──
-    if (data[0]) {
-      const s = data[0];
-      const p = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price?.toFixed(1);
-      const lbl1 = document.getElementById('kpiLbl1');
-      const kv1  = document.getElementById('kpiS1');
-      const kc1  = document.getElementById('kpiChgS1');
-      if (lbl1) lbl1.textContent = (s.name||s.code||'—') + ' ' + (s.code||'');
-      if (kv1)  {
-        if (s.price != null && s.price > 0) {
-          const px = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1);
-          kv1.textContent = 'NT$'+px; kv1.className='kpi-val '+(s.up?'up':'dn');
-          if (kc1) { kc1.textContent=(s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc1.className='kpi-chg '+(s.up?'up':'dn'); }
-        } else {
-          kv1.textContent = '—'; kv1.className='kpi-val'; kv1.style.color='var(--t3)';
-          if (kc1) { kc1.textContent='載入中...'; kc1.className='kpi-chg'; kc1.style.color='var(--t3)'; }
-        }
-      }
+    // ── Dashboard stocks grid (all 5 stocks) ──
+    const stocksGrid = document.getElementById('dashStocksGrid');
+    if (stocksGrid) {
+      stocksGrid.innerHTML = data.map(s => {
+        const p = fmtPrice(s.price);
+        const pct = p && s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
+        return `<div class="kpi-card" onclick="sendQuick('請分析${s.name||s.code}的投資價值')" style="cursor:pointer;">
+          <div class="kpi-label">${s.name||s.code} ${s.code||''}</div>
+          <div class="kpi-val ${p?(s.up?'up':'dn'):''}" style="${p?'':'color:var(--t3)'}">${p?'NT$'+p:'—'}</div>
+          <div class="kpi-chg ${p?(s.up?'up':'dn'):''}" style="${p?'':'color:var(--t3)'}">${pct}</div>
+        </div>`;
+      }).join('');
     }
-    if (data[1]) {
-      const s = data[1];
-      const p = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price?.toFixed(1);
-      const lbl2 = document.getElementById('kpiLbl2');
-      const kv2  = document.getElementById('kpiS2');
-      const kc2  = document.getElementById('kpiChgS2');
-      if (lbl2) lbl2.textContent = (s.name||s.code||'—') + ' ' + (s.code||'');
-      if (kv2)  {
-        if (s.price != null && s.price > 0) {
-          const px = s.price >= 1000 ? s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}) : s.price.toFixed(1);
-          kv2.textContent = 'NT$'+px; kv2.className='kpi-val '+(s.up?'up':'dn');
-          if (kc2) { kc2.textContent=(s.up?'▲':'▼')+' '+Math.abs(s.change||0).toFixed(2)+'%'; kc2.className='kpi-chg '+(s.up?'up':'dn'); }
-        } else {
-          kv2.textContent = '—'; kv2.className='kpi-val'; kv2.style.color='var(--t3)';
-          if (kc2) { kc2.textContent='載入中...'; kc2.className='kpi-chg'; kc2.style.color='var(--t3)'; }
-        }
-      }
-    }
-
-    // Also pull TWII + SP from ticker for dashboard KPIs
-    try {
-      const ticker = await fetch('/api/ticker').then(r => r.json());
-      if (Array.isArray(ticker)) {
-        const twii = ticker.find(t => t.ticker === '^TWII');
-        const sp   = ticker.find(t => t.ticker === '^GSPC');
-        const fmt  = (p) => p >= 1000 ? p.toLocaleString('zh-TW',{maximumFractionDigits:0}) : p?.toFixed(2);
-        if (twii && twii.price > 0) {
-          const kv = document.getElementById('kpiTWII'), kc = document.getElementById('kpiChgTWII');
-          if (kv) { kv.textContent = fmt(twii.price); kv.className = 'kpi-val '+(twii.up?'up':'dn'); }
-          if (kc) { kc.textContent = (twii.up?'▲':'▼')+Math.abs(twii.change).toFixed(2)+'%'; kc.className = 'kpi-chg '+(twii.up?'up':'dn'); }
-        }
-        if (sp && sp.price > 0) {
-          const kv = document.getElementById('kpiSP'), kc = document.getElementById('kpiChgSP');
-          if (kv) { kv.textContent = fmt(sp.price); kv.className = 'kpi-val '+(sp.up?'up':'dn'); }
-          if (kc) { kc.textContent = (sp.up?'▲':'▼')+Math.abs(sp.change).toFixed(2)+'%'; kc.className = 'kpi-chg '+(sp.up?'up':'dn'); }
-        }
-      }
-    } catch {}
 
     return data;
-  } catch (e) { console.warn('watchlist load failed', e.message); }
+  } catch (e) { console.warn('loadWatchlistData:', e.message); }
 }
 
 // Keep backward-compatible alias
@@ -1713,17 +1685,13 @@ async function loadMarketIndicators() {
       const twii = arr.find(t => t.ticker==='^TWII');
       const vix  = arr.find(t => t.ticker==='^VIX') || arr.find(t => t.sym==='VIX');
 
-      if (twii) {
-        const up   = twii.up;
-        const pct  = Math.min(50 + twii.change * 5, 100);
-        document.getElementById('barIdx').style.cssText  = `width:${Math.max(pct,8)}%;background:${up?'var(--green)':'var(--red)'}`;
-        document.getElementById('lblIdx').textContent     = (up?'▲':'▼') + Math.abs(twii.change).toFixed(2) + '%';
-        document.getElementById('lblIdx').className       = 'ind-val ' + (up?'up':'dn');
-        // Update dashboard TWII KPI
-        const kEl = document.getElementById('kpiTWII');
-        const cEl = document.getElementById('kpiChgTWII');
-        if (kEl) { kEl.textContent = twii.price.toLocaleString('zh-TW',{maximumFractionDigits:0}); kEl.className='kpi-val '+(up?'up':'dn'); }
-        if (cEl) { cEl.textContent = (up?'▲':'▼')+Math.abs(twii.change).toFixed(2)+'%'; cEl.className='kpi-chg '+(up?'up':'dn'); }
+      if (twii && twii.price > 0) {
+        const up  = twii.up;
+        const pct = Math.min(50 + twii.change * 5, 100);
+        document.getElementById('barIdx').style.cssText = `width:${Math.max(pct,8)}%;background:${up?'var(--green)':'var(--red)'}`;
+        document.getElementById('lblIdx').textContent   = (up?'▲':'▼') + Math.abs(twii.change).toFixed(2) + '%';
+        document.getElementById('lblIdx').className     = 'ind-val ' + (up?'up':'dn');
+        updateKpi('kpiTWII','kpiChgTWII', twii.price, twii.change, up);
       }
 
       if (vix) {
@@ -1744,14 +1712,13 @@ async function loadMarketIndicators() {
         document.getElementById('lblVol').className     = 'ind-val ' + (volUp?'up':'');
       }
 
-      // S&P500 KPI
-      const sp = arr.find(t => t.ticker==='^GSPC');
-      if (sp) {
-        const kEl = document.getElementById('kpiSP');
-        const cEl = document.getElementById('kpiChgSP');
-        if (kEl) { kEl.textContent = sp.price.toLocaleString('zh-TW',{maximumFractionDigits:0}); kEl.className='kpi-val '+(sp.up?'up':'dn'); }
-        if (cEl) { cEl.textContent = (sp.up?'▲':'▼')+Math.abs(sp.change).toFixed(2)+'%'; cEl.className='kpi-chg '+(sp.up?'up':'dn'); }
-      }
+      // S&P500, VIX, USD/TWD KPIs
+      const sp  = arr.find(t => t.ticker==='^GSPC');
+      const vix = arr.find(t => t.ticker==='^VIX');
+      const usd = arr.find(t => t.ticker==='USDTWD=X');
+      if (sp  && sp.price  > 0) updateKpi('kpiSP',  'kpiChgSP',  sp.price,  sp.change,  sp.up);
+      if (vix && vix.price > 0) updateKpi('kpiVIX', 'kpiChgVIX', vix.price, vix.change, vix.up);
+      if (usd && usd.price > 0) updateKpi('kpiUSD', 'kpiChgUSD', usd.price, usd.change, usd.up);
     }
   } catch (e) { console.warn('indicators load failed', e.message); }
 }
@@ -1988,7 +1955,7 @@ async function initCharts() {
   // ── 2 & 3. Load watchlist ONCE for both alloc chart + holdings table ──
   let dashWatchlist = null;
   try { dashWatchlist = await loadWatchlistData(); } catch {}
-  if (!dashWatchlist || dashWatchlist.length === 0) {
+  if (!dashWatchlist || dashWatchlist.length === 0 || !dashWatchlist.some(s=>s.price>0)) {
     try { dashWatchlist = await fetch('/api/watchlist').then(r=>r.json()); } catch {}
   }
 
@@ -1997,7 +1964,7 @@ async function initCharts() {
     const wl = dashWatchlist;
     if (Array.isArray(wl) && wl.length > 0) {
       const sectors = {};
-      wl.forEach(s => { const k = s.sector||s.sym||s.code||'其他'; sectors[k] = (sectors[k]||0) + (s.price||0); });
+      wl.forEach(s => { const k = s.sector||s.sym||s.code||'其他'; sectors[k] = (sectors[k]||0) + (s.price||1); });
       const labels = Object.keys(sectors);
       const values = Object.values(sectors);
       chartInstances.alloc = new Chart(document.getElementById('allocationChart'), {
@@ -2008,25 +1975,22 @@ async function initCharts() {
     }
   } catch(e) { console.warn('alloc chart:', e.message); }
 
-  // ── 3. Holdings real-time table ────────────
+  // ── 3. Holdings table (shows in holdings card) ────────────
   try {
     const wl = dashWatchlist;
     if (Array.isArray(wl) && wl.length > 0) {
       document.getElementById('holdingsTable').innerHTML = wl.map(s => {
-        const hasPrice = s.price != null && s.price > 0;
-        const price = hasPrice ? (s.price>=1000?s.price.toLocaleString('zh-TW',{maximumFractionDigits:0}):s.price.toFixed(1)) : '—';
-        const pct   = hasPrice && s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
-        const priceClr = hasPrice ? '' : 'color:var(--t3);';
+        const p   = fmtPrice(s.price);
+        const pct = p && s.change != null ? (s.up?'+':'')+s.change.toFixed(2)+'%' : '—';
         return `<div class="holding-item">
-          <div><div class="holding-sym">${s.code} ${s.name}</div><div class="holding-name">${s.sector}${s.pe?' ｜ P/E '+s.pe.toFixed(1):''}</div></div>
-          <div class="holding-val"><div class="holding-price" style="${priceClr}">${hasPrice?'NT$':''}${price}</div><div class="holding-pnl ${s.up&&hasPrice?'up':'dn'}">${pct}</div></div>
+          <div><div class="holding-sym">${s.code||''} ${s.name||''}</div>
+               <div class="holding-name">${s.sector||''}${s.pe?' ｜ P/E '+s.pe.toFixed(1):''}</div></div>
+          <div class="holding-val">
+            <div class="holding-price" style="${p?'':'color:var(--t3)'}">${p?'NT$'+p:'—'}</div>
+            <div class="holding-pnl ${p&&s.up?'up':'dn'}">${pct}</div>
+          </div>
         </div>`;
       }).join('');
-      const now = new Date();
-      const nowStr = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
-      document.getElementById('holdLastUpdate').textContent = '更新 '+nowStr;
-      const dashEl = document.getElementById('dashLastUpdate');
-      if (dashEl) dashEl.textContent = '最後更新 '+nowStr;
     }
   } catch {}
 
