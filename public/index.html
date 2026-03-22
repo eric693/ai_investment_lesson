@@ -1679,45 +1679,37 @@ async function loadMarketIndicators() {
       }
     }
 
-    // Ticker data for TWII and VIX
+    // Ticker data for TWII / VIX / SP / USD
     if (tickerData.status === 'fulfilled' && Array.isArray(tickerData.value)) {
-      const arr = tickerData.value;
+      const arr  = tickerData.value;
       const twii = arr.find(t => t.ticker==='^TWII');
-      const vix  = arr.find(t => t.ticker==='^VIX') || arr.find(t => t.sym==='VIX');
+      const vix  = arr.find(t => t.ticker==='^VIX');
+      const sp   = arr.find(t => t.ticker==='^GSPC');
+      const usd  = arr.find(t => t.ticker==='USDTWD=X');
 
+      // Side panel indicators
       if (twii && twii.price > 0) {
-        const up  = twii.up;
         const pct = Math.min(50 + twii.change * 5, 100);
-        document.getElementById('barIdx').style.cssText = `width:${Math.max(pct,8)}%;background:${up?'var(--green)':'var(--red)'}`;
-        document.getElementById('lblIdx').textContent   = (up?'▲':'▼') + Math.abs(twii.change).toFixed(2) + '%';
-        document.getElementById('lblIdx').className     = 'ind-val ' + (up?'up':'dn');
-        updateKpi('kpiTWII','kpiChgTWII', twii.price, twii.change, up);
+        document.getElementById('barIdx').style.cssText = `width:${Math.max(pct,8)}%;background:${twii.up?'var(--green)':'var(--red)'}`;
+        document.getElementById('lblIdx').textContent   = (twii.up?'▲':'▼') + Math.abs(twii.change).toFixed(2) + '%';
+        document.getElementById('lblIdx').className     = 'ind-val ' + (twii.up?'up':'dn');
+        updateKpi('kpiTWII','kpiChgTWII', twii.price, twii.change, twii.up);
       }
-
-      if (vix) {
-        const vixVal = vix.price;
-        const vixPct = Math.min((vixVal / 50) * 100, 100);
+      if (vix && vix.price > 0) {
+        const vixVal   = vix.price;
         const vixColor = vixVal < 15 ? 'var(--green)' : vixVal < 25 ? 'var(--amber)' : 'var(--red)';
-        const vixLbl   = vixVal < 15 ? '低位' : vixVal < 25 ? '中位' : '高位';
-        document.getElementById('barVIX').style.cssText = `width:${vixPct}%;background:${vixColor}`;
+        document.getElementById('barVIX').style.cssText = `width:${Math.min(vixVal/50*100,100)}%;background:${vixColor}`;
         document.getElementById('lblVIX').textContent   = vixVal.toFixed(1);
         document.getElementById('lblVIX').style.color   = vixColor;
+        updateKpi('kpiVIX','kpiChgVIX', vix.price, vix.change, vix.up);
       }
-
-      // Volume proxy: use TWII volume or estimate
-      if (twii && twii.price) {
-        const volUp = twii.up;
-        document.getElementById('barVol').style.cssText = `width:65%;background:${volUp?'var(--green)':'var(--amber)'}`;
-        document.getElementById('lblVol').textContent   = volUp ? '偏高' : '偏低';
-        document.getElementById('lblVol').className     = 'ind-val ' + (volUp?'up':'');
+      if (twii && twii.price > 0) {
+        document.getElementById('barVol').style.cssText = `width:65%;background:${twii.up?'var(--green)':'var(--amber)'}`;
+        document.getElementById('lblVol').textContent   = twii.up ? '偏高' : '偏低';
+        document.getElementById('lblVol').className     = 'ind-val ' + (twii.up?'up':'');
       }
-
-      // S&P500, VIX, USD/TWD KPIs
-      const sp  = arr.find(t => t.ticker==='^GSPC');
-      const vix = arr.find(t => t.ticker==='^VIX');
-      const usd = arr.find(t => t.ticker==='USDTWD=X');
+      // Dashboard KPIs
       if (sp  && sp.price  > 0) updateKpi('kpiSP',  'kpiChgSP',  sp.price,  sp.change,  sp.up);
-      if (vix && vix.price > 0) updateKpi('kpiVIX', 'kpiChgVIX', vix.price, vix.change, vix.up);
       if (usd && usd.price > 0) updateKpi('kpiUSD', 'kpiChgUSD', usd.price, usd.change, usd.up);
     }
   } catch (e) { console.warn('indicators load failed', e.message); }
